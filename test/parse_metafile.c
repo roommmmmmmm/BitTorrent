@@ -44,18 +44,18 @@ int parse_metafile(char *metafile)
 	ret = get_piece_length();
 	if(ret < 0) { printf("%s:%d wrong",__FILE__,__LINE__); return -1; }
 
-	// // 读取各个piece的哈希值
-	// ret = get_pieces();
-	// if(ret < 0) { printf("%s:%d wrong",__FILE__,__LINE__); return -1; }
+	// 读取各个piece的哈希值
+	ret = get_pieces();
+	if(ret < 0) { printf("%s:%d wrong",__FILE__,__LINE__); return -1; }
 
-	// // 获取要下载的文件名，对于多文件的种子，获取的是目录名
-	// ret = get_file_name();
-	// if(ret < 0) { printf("%s:%d wrong",__FILE__,__LINE__); return -1; }
-	//
-	// // 对于多文件的种子，获取各个待下载的文件路径和文件长度
-	// ret = get_files_length_path();
-	// if(ret < 0) { printf("%s:%d wrong",__FILE__,__LINE__); return -1; }
-	//
+	// 获取要下载的文件名，对于多文件的种子，获取的是目录名
+	ret = get_file_name();
+	if(ret < 0) { printf("%s:%d wrong",__FILE__,__LINE__); return -1; }
+
+	// 对于多文件的种子，获取各个待下载的文件路径和文件长度
+	ret = get_files_length_path();
+	if(ret < 0) { printf("%s:%d wrong",__FILE__,__LINE__); return -1; }
+
 	// // 获取待下载的文件的总长度
 	// ret = get_file_length();
 	// if(ret < 0) { printf("%s:%d wrong",__FILE__,__LINE__); return -1; }
@@ -68,12 +68,65 @@ int parse_metafile(char *metafile)
 
 	return 0;
 }
+
+int get_file_name(){
+	long  i;
+	int   count = 0;
+
+	if( find_keyword("4:name", &i) == 1 ) {
+		i = i + 6;  // skip "4:name"
+		// i = i + strlen("4:name");
+		while(metafile_content[i] != ':') {
+			count = count * 10 + (metafile_content[i] - '0');
+			i++;
+		}
+		i++;        // skip ':'
+		file_name = (char *)malloc(count+1);
+		memcpy(file_name,&metafile_content[i],count);
+		file_name[count] = '\0';
+	} else {
+		return -1;
+	}
+
+#ifdef DEBUG
+	printf("file_name:%s\n",file_name);
+#endif
+
+	return 0;
+}
+
+int get_pieces(){
+	long i;
+
+	if( find_keyword("6:pieces", &i) == 1 ) {
+		i = i + strlen("6:pieces");     // skip "6:pieces"
+		// i = i + 8;     // skip "6:pieces" 按理说应该是直接写数字效率更高
+		while(metafile_content[i] != ':') {
+			pieces_length = pieces_length * 10 + (metafile_content[i] - '0');
+			++i;
+		}
+		++i;           // skip ':'
+		pieces = (char *)malloc(pieces_length+1);
+		memcpy(pieces,&metafile_content[i],pieces_length);
+		pieces[pieces_length] = '\0';
+	} else {
+		return -1;
+	}
+
+#ifdef DEBUG
+	printf("get_pieces ok\n");
+#endif
+
+	return 0;
+}
+
 int get_piece_length()
 {
 	long i;
 
 	if( find_keyword("12:piece length",&i) == 1 ) {
-		i = i + strlen("12:piece length");  // skip "12:piece length"
+		i = i + 15;
+		//i = i + strlen("12:piece length");  // skip "12:piece length"
 		i++;  // skip 'i'
 		while(metafile_content[i] != 'e') {
 			piece_length = piece_length * 10 + (metafile_content[i] - '0');
@@ -172,7 +225,8 @@ int read_announce_list()
 		}
 	}
 	else {  // 如果有13:announce-list关键词就不用处理8:announce关键词
-		i = i + strlen("13:announce-list");
+		i = i + 16;
+		// i = i + strlen("13:announce-list");
 		i++;         // skip 'l'
 		while(metafile_content[i] != 'e') {
 			i++;     // skip 'l'
