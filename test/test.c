@@ -44,7 +44,6 @@ int main(int argc, char const *argv[]) {
         len = 0;
         ++i;
         if(i >= filesize)  return -1;
-        // exit(1);
       }
 
       printf("find it\n");

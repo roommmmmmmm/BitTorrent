@@ -7,36 +7,36 @@
 #include "parse_metafile.h"
 #include "sha1.h"
 
-char  *metafile_content = NULL; // ±£´æÖÖ×ÓÎÄ¼şµÄÄÚÈİ
-long  filesize;                 // ÖÖ×ÓÎÄ¼şµÄ³¤¶È
+char  *metafile_content = NULL; // ä¿å­˜ç§å­æ–‡ä»¶çš„å†…å®¹
+long  filesize;                 // ç§å­æ–‡ä»¶çš„é•¿åº¦
 
-int       piece_length  = 0;    // Ã¿¸öpieceµÄ³¤¶È,Í¨³£Îª256KB¼´262144×Ö½Ú
-char      *pieces       = NULL; // ±£´æÃ¿¸öpiecesµÄ¹şÏ£Öµ,Ã¿¸ö¹şÏ£ÖµÎª20×Ö½Ú
-int       pieces_length = 0;    // pieces»º³åÇøµÄ³¤¶È
+int       piece_length  = 0;    // æ¯ä¸ªpieceçš„é•¿åº¦,é€šå¸¸ä¸º256KBå³262144å­—èŠ‚
+char      *pieces       = NULL; // ä¿å­˜æ¯ä¸ªpiecesçš„å“ˆå¸Œå€¼,æ¯ä¸ªå“ˆå¸Œå€¼ä¸º20å­—èŠ‚
+int       pieces_length = 0;    // piecesç¼“å†²åŒºçš„é•¿åº¦
 
-int       multi_file    = 0;    // Ö¸Ã÷ÊÇµ¥ÎÄ¼ş»¹ÊÇ¶àÎÄ¼ş
-char      *file_name    = NULL; // ¶ÔÓÚµ¥ÎÄ¼ş,´æ·ÅÎÄ¼şÃû;¶ÔÓÚ¶àÎÄ¼ş,´æ·ÅÄ¿Â¼Ãû
-long long file_length   = 0;    // ´æ·Å´ıÏÂÔØÎÄ¼şµÄ×Ü³¤¶È
-Files     *files_head   = NULL; // Ö»¶Ô¶àÎÄ¼şÖÖ×ÓÓĞĞ§,´æ·Å¸÷¸öÎÄ¼şµÄÂ·¾¶ºÍ³¤¶È
+int       multi_file    = 0;    // æŒ‡æ˜æ˜¯å•æ–‡ä»¶è¿˜æ˜¯å¤šæ–‡ä»¶
+char      *file_name    = NULL; // å¯¹äºå•æ–‡ä»¶,å­˜æ”¾æ–‡ä»¶å;å¯¹äºå¤šæ–‡ä»¶,å­˜æ”¾ç›®å½•å
+long long file_length   = 0;    // å­˜æ”¾å¾…ä¸‹è½½æ–‡ä»¶çš„æ€»é•¿åº¦
+Files     *files_head   = NULL; // åªå¯¹å¤šæ–‡ä»¶ç§å­æœ‰æ•ˆ,å­˜æ”¾å„ä¸ªæ–‡ä»¶çš„è·¯å¾„å’Œé•¿åº¦
 
-unsigned char info_hash[20];    // ±£´æinfo_hashµÄÖµ,Á¬½ÓtrackerºÍpeerÊ±Ê¹ÓÃ
-unsigned char peer_id[20];      // ±£´æpeer_idµÄÖµ,Á¬½ÓpeerÊ±Ê¹ÓÃ
+unsigned char info_hash[20];    // ä¿å­˜info_hashçš„å€¼,è¿æ¥trackerå’Œpeeræ—¶ä½¿ç”¨
+unsigned char peer_id[20];      // ä¿å­˜peer_idçš„å€¼,è¿æ¥peeræ—¶ä½¿ç”¨
 
-Announce_list *announce_list_head = NULL; // ÓÃÓÚ±£´æËùÓĞtracker·şÎñÆ÷µÄURL
+Announce_list *announce_list_head = NULL; // ç”¨äºä¿å­˜æ‰€æœ‰trackeræœåŠ¡å™¨çš„URL
 
 
 int read_metafile(char *metafile_name)
 {
 	long  i;
 
-	// ÒÔ¶ş½øÖÆ¡¢Ö»¶ÁµÄ·½Ê½´ò¿ªÎÄ¼ş
+	// ä»¥äºŒè¿›åˆ¶ã€åªè¯»çš„æ–¹å¼æ‰“å¼€æ–‡ä»¶
 	FILE *fp = fopen(metafile_name,"rb");
 	if(fp == NULL) {
 		printf("%s:%d can not open file\n",__FILE__,__LINE__);
 		return -1;
 	}
 
-	// »ñÈ¡ÖÖ×ÓÎÄ¼şµÄ³¤¶È
+	// è·å–ç§å­æ–‡ä»¶çš„é•¿åº¦
 	fseek(fp,0,SEEK_END);
 	filesize = ftell(fp);
 	if(filesize == -1) {
@@ -50,7 +50,7 @@ int read_metafile(char *metafile_name)
 		return -1;
 	}
 
-	// ¶ÁÈ¡ÖÖ×ÓÎÄ¼şµÄÄÚÈİµ½metafile_content»º³åÇøÖĞ
+	// è¯»å–ç§å­æ–‡ä»¶çš„å†…å®¹åˆ°metafile_contentç¼“å†²åŒºä¸­
 	fseek(fp,0,SEEK_SET);
 	for(i = 0; i < filesize; i++)
 		metafile_content[i] = fgetc(fp);
@@ -82,8 +82,7 @@ int find_keyword(char *keyword,long *position)
 	return 0;
 }
 
-int read_announce_list()
-{
+int read_announce_list(){
 	Announce_list  *node = NULL;
 	Announce_list  *p    = NULL;
 	int            len   = 0;
@@ -94,9 +93,9 @@ int read_announce_list()
 			i = i + strlen("8:announce");
 			while( isdigit(metafile_content[i]) ) {
 				len = len * 10 + (metafile_content[i] - '0');
-				i++;
+				++i;
 			}
-			i++;  // Ìø¹ı ':'
+			++i;  // è·³è¿‡ ':'
 
 			node = (Announce_list *)malloc(sizeof(Announce_list));
 			strncpy(node->announce,&metafile_content[i],len);
@@ -105,21 +104,21 @@ int read_announce_list()
 			announce_list_head = node;
 		}
 	}
-	else {  // Èç¹ûÓĞ13:announce-list¹Ø¼ü´Ê¾Í²»ÓÃ´¦Àí8:announce¹Ø¼ü´Ê
+	else {  // å¦‚æœæœ‰13:announce-listå…³é”®è¯å°±ä¸ç”¨å¤„ç†8:announceå…³é”®è¯
 		i = i + strlen("13:announce-list");
-		i++;         // skip 'l'
+		++i;         // skip 'l'
 		while(metafile_content[i] != 'e') {
-			i++;     // skip 'l'
+			++i;     // skip 'l'
 			while( isdigit(metafile_content[i]) ) {
-				// ÌáÈ¡tracker·şÎñÆ÷µØÖ·µÄ³¤¶ÈĞÅÏ¢
+				// æå–trackeræœåŠ¡å™¨åœ°å€çš„é•¿åº¦ä¿¡æ¯
 				len = len * 10 + (metafile_content[i] - '0');
-				i++;
+				++i;
 			}
-			// °´ÕÕ¹æ¶¨£¬³¤¶È¹ıºóÒ»¶¨ÊÇÒ»¸ö : ºÅ£¬²»ÊÇ£¬ÔòÖ±½Ó·µ»Ø±¨´íĞÅÏ¢
-			if( metafile_content[i] == ':' )  i++;
+			// æŒ‰ç…§è§„å®šï¼Œé•¿åº¦è¿‡åä¸€å®šæ˜¯ä¸€ä¸ª : å·ï¼Œä¸æ˜¯ï¼Œåˆ™ç›´æ¥è¿”å›æŠ¥é”™ä¿¡æ¯
+			if( metafile_content[i] == ':' )  ++i;
 			else  return -1;
 
-			// Ö»´¦ÀíÒÔhttp¿ªÍ·µÄtrackerµØÖ·,²»´¦ÀíÒÔudp¿ªÍ·µÄµØÖ·
+			// åªå¤„ç†ä»¥httpå¼€å¤´çš„trackeråœ°å€,ä¸å¤„ç†ä»¥udpå¼€å¤´çš„åœ°å€
 			if( memcmp(&metafile_content[i],"http",4) == 0 ) {
 				node = (Announce_list *)malloc(sizeof(Announce_list));
 				strncpy(node->announce,&metafile_content[i],len);
@@ -130,14 +129,14 @@ int read_announce_list()
 					announce_list_head = node;
 				else {
 					p = announce_list_head;
-					while( p->next != NULL) p = p->next; // Ê¹pÖ¸Ïò×îºó¸ö½áµã
-					p->next = node; // node³ÉÎªtrackerÁĞ±íµÄ×îºóÒ»¸ö½áµã
+					while( p->next != NULL) p = p->next; // ä½¿pæŒ‡å‘æœ€åä¸ªç»“ç‚¹
+					p->next = node; // nodeæˆä¸ºtrackeråˆ—è¡¨çš„æœ€åä¸€ä¸ªç»“ç‚¹
 				}
 			}
 
 			i = i + len;
 			len = 0;
-			i++;    // skip 'e'
+			++i;    // skip 'e'
 			if(i >= filesize)  return -1;
 		}
 	}
@@ -153,12 +152,11 @@ int read_announce_list()
 	return 0;
 }
 
-// Á¬½ÓÄ³Ğ©trackerÊ±»á·µ»ØÒ»¸öÖØ¶¨ÏòURL,ĞèÒªÁ¬½Ó¸ÃURL²ÅÄÜ»ñÈ¡peer
-int add_an_announce(char *url)
-{
+// è¿æ¥æŸäº›trackeræ—¶ä¼šè¿”å›ä¸€ä¸ªé‡å®šå‘URL,éœ€è¦è¿æ¥è¯¥URLæ‰èƒ½è·å–peer
+int add_an_announce(char *url){
 	Announce_list *p = announce_list_head, *q;
 
-	// Èô²ÎÊıÖ¸¶¨µÄURLÔÚtrackerÁĞ±íÖĞÒÑ´æÔÚ,ÔòÎŞĞèÌí¼Ó
+	// è‹¥å‚æ•°æŒ‡å®šçš„URLåœ¨trackeråˆ—è¡¨ä¸­å·²å­˜åœ¨,åˆ™æ— éœ€æ·»åŠ 
 	while(p != NULL) {
 		if(strcmp(p->announce,url) == 0)  break;
 		p = p->next;
@@ -175,33 +173,32 @@ int add_an_announce(char *url)
 	p->next = q;
 	return 1;
 }
-
-int is_multi_files()
-{
+// åˆ¤æ–­æ˜¯ä¸‹è½½å¤šä¸ªæ–‡ä»¶è¿˜æ˜¯ä¸‹è½½å•ä¸ªæ–‡ä»¶
+int is_multi_files(){
 	long i;
-
+	// å¦‚æœåŒ…å« 5:files å°±æ˜¯ä¸‹è½½å¤šä¸ªæ–‡ä»¶
 	if( find_keyword("5:files",&i) == 1 ) {
 		multi_file = 1;
+#ifdef DEBUG
+	printf("is_multi_files : Yes\n");
+#endif
 		return 1;
 	}
-
 #ifdef DEBUG
-	// printf("is_multi_files:%d\n",multi_file);
+	printf("is_multi_files : No!\n");
 #endif
-
 	return 0;
 }
-
-int get_piece_length()
-{
+// è·å–pieceçš„é•¿åº¦
+int get_piece_length(){
 	long i;
-
+	// å…³é”®å­—æ˜¯ 12:piece length å³æ‰¾åˆ°äº†è¿™ä¸ªå…³é”®å­—ï¼Œåé¢çš„å°±æ˜¯é•¿åº¦ä¿¡æ¯
 	if( find_keyword("12:piece length",&i) == 1 ) {
 		i = i + strlen("12:piece length");  // skip "12:piece length"
-		i++;  // skip 'i'
+		++i;  // skip 'i'
 		while(metafile_content[i] != 'e') {
 			piece_length = piece_length * 10 + (metafile_content[i] - '0');
-			i++;
+			++i;
 		}
 	} else {
 		return -1;
@@ -259,7 +256,7 @@ int get_file_name()
 	}
 
 #ifdef DEBUG
-	// ÓÉÓÚ¿ÉÄÜº¬ÓĞÖĞÎÄ×Ö·û,Òò´Ë¿ÉÄÜ´òÓ¡³öÂÒÂë
+	// ç”±äºå¯èƒ½å«æœ‰ä¸­æ–‡å­—ç¬¦,å› æ­¤å¯èƒ½æ‰“å°å‡ºä¹±ç 
 	// printf("file_name:%s\n",file_name);
 #endif
 
@@ -343,7 +340,7 @@ int get_files_length_path()
 	}
 
 #ifdef DEBUG
-	// ÓÉÓÚ¿ÉÄÜº¬ÓĞÖĞÎÄ×Ö·û,Òò´Ë¿ÉÄÜ´òÓ¡³öÂÒÂë
+	// ç”±äºå¯èƒ½å«æœ‰ä¸­æ–‡å­—ç¬¦,å› æ­¤å¯èƒ½æ‰“å°å‡ºä¹±ç 
 	// p = files_head;
 	// while(p != NULL) {
 	//	 printf("%ld:%s\n",p->length,p->path);
@@ -362,7 +359,7 @@ int get_info_hash()
 	if(metafile_content == NULL)  return -1;
 
 	if( find_keyword("4:info",&i) == 1 ) {
-		begin = i+6;  // beginÊÇ¹Ø¼ü×Ö"4:info"¶ÔÓ¦ÖµµÄÆğÊ¼ÏÂ±ê
+		begin = i+6;  // beginæ˜¯å…³é”®å­—"4:info"å¯¹åº”å€¼çš„èµ·å§‹ä¸‹æ ‡
 	} else {
 		return -1;
 	}
@@ -417,9 +414,9 @@ int get_info_hash()
 
 int get_peer_id()
 {
-	// ÉèÖÃ²úÉúËæ»úÊıµÄÖÖ×Ó
+	// è®¾ç½®äº§ç”Ÿéšæœºæ•°çš„ç§å­
 	srand(time(NULL));
-	// Éú³ÉËæ»úÊı,²¢°ÑÆäÖĞ12Î»¸³¸øpeer_id,peer_idÇ°8Î»¹Ì¶¨Îª-TT1000-
+	// ç”Ÿæˆéšæœºæ•°,å¹¶æŠŠå…¶ä¸­12ä½èµ‹ç»™peer_id,peer_idå‰8ä½å›ºå®šä¸º-TT1000-
 	sprintf(peer_id,"-TT1000-%12d",rand());
 
 #ifdef DEBUG
@@ -458,39 +455,39 @@ int parse_metafile(char *metafile)
 {
 	int ret;
 
-	// ¶ÁÈ¡ÖÖ×ÓÎÄ¼ş
+	// è¯»å–ç§å­æ–‡ä»¶
 	ret = read_metafile(metafile);
 	if(ret < 0) { printf("%s:%d wrong",__FILE__,__LINE__); return -1; }
 
-	// ´ÓÖÖ×ÓÎÄ¼şÖĞ»ñÈ¡tracker·şÎñÆ÷µÄµØÖ·
+	// ä»ç§å­æ–‡ä»¶ä¸­è·å–trackeræœåŠ¡å™¨çš„åœ°å€
 	ret = read_announce_list();
 	if(ret < 0) { printf("%s:%d wrong",__FILE__,__LINE__); return -1; }
 
-	// ÅĞ¶ÏÊÇ·ñÎª¶àÎÄ¼ş
+	// åˆ¤æ–­æ˜¯å¦ä¸ºå¤šæ–‡ä»¶
 	ret = is_multi_files();
 	if(ret < 0) { printf("%s:%d wrong",__FILE__,__LINE__); return -1; }
 
-	// »ñÈ¡Ã¿¸öpieceµÄ³¤¶È,Ò»°ãÎª256KB
+	// è·å–æ¯ä¸ªpieceçš„é•¿åº¦,ä¸€èˆ¬ä¸º256KB
 	ret = get_piece_length();
 	if(ret < 0) { printf("%s:%d wrong",__FILE__,__LINE__); return -1; }
 
-	// ¶ÁÈ¡¸÷¸öpieceµÄ¹şÏ£Öµ
+	// è¯»å–å„ä¸ªpieceçš„å“ˆå¸Œå€¼
 	ret = get_pieces();
 	if(ret < 0) { printf("%s:%d wrong",__FILE__,__LINE__); return -1; }
 
-	// »ñÈ¡ÒªÏÂÔØµÄÎÄ¼şÃû£¬¶ÔÓÚ¶àÎÄ¼şµÄÖÖ×Ó£¬»ñÈ¡µÄÊÇÄ¿Â¼Ãû
+	// è·å–è¦ä¸‹è½½çš„æ–‡ä»¶åï¼Œå¯¹äºå¤šæ–‡ä»¶çš„ç§å­ï¼Œè·å–çš„æ˜¯ç›®å½•å
 	ret = get_file_name();
 	if(ret < 0) { printf("%s:%d wrong",__FILE__,__LINE__); return -1; }
 
-	// ¶ÔÓÚ¶àÎÄ¼şµÄÖÖ×Ó£¬»ñÈ¡¸÷¸ö´ıÏÂÔØµÄÎÄ¼şÂ·¾¶ºÍÎÄ¼ş³¤¶È
+	// å¯¹äºå¤šæ–‡ä»¶çš„ç§å­ï¼Œè·å–å„ä¸ªå¾…ä¸‹è½½çš„æ–‡ä»¶è·¯å¾„å’Œæ–‡ä»¶é•¿åº¦
 	ret = get_files_length_path();
 	if(ret < 0) { printf("%s:%d wrong",__FILE__,__LINE__); return -1; }
 
-	// »ñÈ¡´ıÏÂÔØµÄÎÄ¼şµÄ×Ü³¤¶È
+	// è·å–å¾…ä¸‹è½½çš„æ–‡ä»¶çš„æ€»é•¿åº¦
 	ret = get_file_length();
 	if(ret < 0) { printf("%s:%d wrong",__FILE__,__LINE__); return -1; }
 
-	// »ñµÃinfo_hash£¬Éú³Épeer_id
+	// è·å¾—info_hashï¼Œç”Ÿæˆpeer_id
 	ret = get_info_hash();
 	if(ret < 0) { printf("%s:%d wrong",__FILE__,__LINE__); return -1; }
 	ret = get_peer_id();
