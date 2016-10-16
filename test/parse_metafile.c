@@ -56,10 +56,10 @@ int parse_metafile(char *metafile)
 	ret = get_files_length_path();
 	if(ret < 0) { printf("%s:%d wrong",__FILE__,__LINE__); return -1; }
 
-	// // 获取待下载的文件的总长度
-	// ret = get_file_length();
-	// if(ret < 0) { printf("%s:%d wrong",__FILE__,__LINE__); return -1; }
-	//
+	// 获取待下载的文件的总长度
+	ret = get_file_length();
+	if(ret < 0) { printf("%s:%d wrong",__FILE__,__LINE__); return -1; }
+
 	// // 获得info_hash，生成peer_id
 	// ret = get_info_hash();
 	// if(ret < 0) { printf("%s:%d wrong",__FILE__,__LINE__); return -1; }
@@ -68,7 +68,92 @@ int parse_metafile(char *metafile)
 
 	return 0;
 }
+int get_file_length()
+{
+	long i;
 
+	if(is_multi_files() == 1)  {
+		if(files_head == NULL)  get_files_length_path();
+		Files *p = files_head;
+		while(p != NULL) { file_length += p->length; p = p->next; }
+	} else {
+		if( find_keyword("6:length",&i) == 1 ) {
+			i = i + 8;  // skip "6:length"
+			i++;        // skip 'i'
+			while(metafile_content[i] != 'e') {
+				file_length = file_length * 10 + (metafile_content[i] - '0');
+				i++;
+			}
+		}
+	}
+
+#ifdef DEBUG
+	printf("file_length:%lld\n",file_length);
+#endif
+
+	return 0;
+}
+int get_files_length_path()
+{
+	long   i;
+	long    length;
+	int    count;
+	Files  *node  = NULL;
+	Files  *p     = NULL;
+
+	if(is_multi_files() != 1) {
+		return 0;
+	}
+
+	for(i = 0; i < filesize-8; i++) {
+		if( memcmp(&metafile_content[i],"6:length",8) == 0 )
+		{
+			i = i + 8;  // skip "6:length"
+			i++;        // skip 'i'
+			length = 0;
+			while(metafile_content[i] != 'e') {
+				length = length * 10 + (metafile_content[i] - '0');
+				i++;
+			}
+			// printf("%ld\n",length );
+			node = (Files *)malloc(sizeof(Files));
+			node->length = length;
+			node->next = NULL;
+			if(files_head == NULL)
+				files_head = node;
+			else {
+				p = files_head;
+				while(p->next != NULL) p = p->next;
+				p->next = node;
+			}
+		}
+		if( memcmp(&metafile_content[i],"4:path",6) == 0 )
+		{
+			i = i + 6;  // skip "4:path"
+			i++;        // skip 'l'
+			count = 0;
+			while(metafile_content[i] != ':') {
+				count = count * 10 + (metafile_content[i] - '0');
+				i++;
+			}
+			i++;        // skip ':'
+			p = files_head;
+			while(p->next != NULL) p = p->next;
+			memcpy(p->path,&metafile_content[i],count);
+			*(p->path + count) = '\0';
+		}
+	}
+
+#ifdef DEBUG
+	p = files_head;
+	while(p != NULL) {
+		 printf("%ld:%s\n",p->length,p->path);
+		 p = p->next;
+	}
+#endif
+
+	return 0;
+}
 int get_file_name(){
 	long  i;
 	int   count = 0;

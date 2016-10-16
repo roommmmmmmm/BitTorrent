@@ -293,7 +293,7 @@ int get_file_length()
 int get_files_length_path()
 {
 	long   i;
-	int    length;
+	long    length;
 	int    count;
 	Files  *node  = NULL;
 	Files  *p     = NULL;

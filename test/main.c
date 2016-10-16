@@ -9,8 +9,8 @@
 int main(int argc, char const *argv[]) {
   int restlt;
 
-  restlt = parse_metafile("fff.torrent");
-  // restlt = parse_metafile("YMDD-055.torrent");
+  // restlt = parse_metafile("fff.torrent");
+  restlt = parse_metafile("YMDD-055.torrent");
   printf("read_metafile ok\n");
 
   return 0;

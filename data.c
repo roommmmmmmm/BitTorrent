@@ -14,18 +14,18 @@
 #include "policy.h"
 #include "torrent.h"
 
-// ¶Ô¶¨ÒåµÄ»º³åÇøµÄËµÃ÷£º
-// ÉèÖÃ»º³åÇø¿ÉÒÔ±ÜÃâÆµ·±¶ÁĞ´Ó²ÅÌ,´Ó¶øÓĞÀûÓÚ±£»¤Ó²ÅÌ
-// Ã¿¸ö»º³åÇø½áµãµÄ´óĞ¡Îª16KB,Ä¬ÈÏÉú³É1024¸ö½áµã,×Ü´óĞ¡Îª16MB
-// »º³åÇøÒÔ256KBÎªµ¥Î»Ê¹ÓÃ,Ò²¾ÍÊÇÁÙ½üµÄ16¸ö½áµãÎªÒ»×é´æ·ÅÒ»¸öpiece
-// ÏÂ±êÎª0¡«15µÄ½áµã´æ·ÅÒ»¸öpiece,16¡«31´æ·ÅÒ»¸öpiece,ÒÀ´ÎÀàÍÆ
-// Ò²¿ÉÒÔ´¦ÀíÒ»¸öpieceµÄ´óĞ¡²»Îª256KBµÄÇé¿ö,ÈçÒ»¸öpiece´óĞ¡Îª512KB
-// ÎªÁË´¦ÀíµÄ·½±ã,ËùÓĞ»º³åÇøÔÚ³ÌĞòÆô¶¯Ê±Í³Ò»ÉêÇë,ÔÚ³ÌĞò½áÊøÊ±ÊÍ·Å
+// å¯¹å®šä¹‰çš„ç¼“å†²åŒºçš„è¯´æ˜ï¼š
+// è®¾ç½®ç¼“å†²åŒºå¯ä»¥é¿å…é¢‘ç¹è¯»å†™ç¡¬ç›˜,ä»è€Œæœ‰åˆ©äºä¿æŠ¤ç¡¬ç›˜
+// æ¯ä¸ªç¼“å†²åŒºç»“ç‚¹çš„å¤§å°ä¸º16KB,é»˜è®¤ç”Ÿæˆ1024ä¸ªç»“ç‚¹,æ€»å¤§å°ä¸º16MB
+// ç¼“å†²åŒºä»¥256KBä¸ºå•ä½ä½¿ç”¨,ä¹Ÿå°±æ˜¯ä¸´è¿‘çš„16ä¸ªç»“ç‚¹ä¸ºä¸€ç»„å­˜æ”¾ä¸€ä¸ªpiece
+// ä¸‹æ ‡ä¸º0ï½15çš„ç»“ç‚¹å­˜æ”¾ä¸€ä¸ªpiece,16ï½31å­˜æ”¾ä¸€ä¸ªpiece,ä¾æ¬¡ç±»æ¨
+// ä¹Ÿå¯ä»¥å¤„ç†ä¸€ä¸ªpieceçš„å¤§å°ä¸ä¸º256KBçš„æƒ…å†µ,å¦‚ä¸€ä¸ªpieceå¤§å°ä¸º512KB
+// ä¸ºäº†å¤„ç†çš„æ–¹ä¾¿,æ‰€æœ‰ç¼“å†²åŒºåœ¨ç¨‹åºå¯åŠ¨æ—¶ç»Ÿä¸€ç”³è¯·,åœ¨ç¨‹åºç»“æŸæ—¶é‡Šæ”¾
 
-// »º³åÇøÖĞ¹²ÓĞ¶àÉÙ¸öBtcache½áµã
+// ç¼“å†²åŒºä¸­å…±æœ‰å¤šå°‘ä¸ªBtcacheç»“ç‚¹
 #define btcache_len 1024
 
-// ÒÔÏÂ±äÁ¿¶¨ÒåÔÚparse_metafile.cÎÄ¼ş
+// ä»¥ä¸‹å˜é‡å®šä¹‰åœ¨parse_metafile.cæ–‡ä»¶
 extern  char   *file_name;
 extern  Files  *files_head;
 extern  int     file_length;
@@ -37,26 +37,26 @@ extern  Bitmap *bitmap;
 extern  int     download_piece_num;
 extern  Peer   *peer_head;
 
-// Ö¸ÏòÒ»¸ö16MB´óĞ¡µÄ»º³åÇø
+// æŒ‡å‘ä¸€ä¸ª16MBå¤§å°çš„ç¼“å†²åŒº
 Btcache *btcache_head = NULL;
-// ´æ·Å´ıÏÂÔØÎÄ¼şµÄ×îºóÒ»¸öpiece
+// å­˜æ”¾å¾…ä¸‹è½½æ–‡ä»¶çš„æœ€åä¸€ä¸ªpiece
 Btcache *last_piece = NULL;
 int      last_piece_index = 0;
 int      last_piece_count = 0;
 int      last_slice_len   = 0;
 
-// ´æ·ÅÎÄ¼şÃèÊö·û
+// å­˜æ”¾æ–‡ä»¶æè¿°ç¬¦
 int *fds    = NULL;
 int fds_len = 0;
 
-// ´æ·Å¸Õ¸ÕÏÂÔØµ½µÄpieceµÄË÷Òı
-// ÏÂÔØµ½Ò»¸öĞÂµÄpieceÒªÏòËùÓĞµÄpeerÍ¨±¨
-int have_piece_index[64]; 
+// å­˜æ”¾åˆšåˆšä¸‹è½½åˆ°çš„pieceçš„ç´¢å¼•
+// ä¸‹è½½åˆ°ä¸€ä¸ªæ–°çš„pieceè¦å‘æ‰€æœ‰çš„peeré€šæŠ¥
+int have_piece_index[64];
 
-// ÊÇ·ñ½øÈëÁËÖÕ¶ËÄ£Ê½
+// æ˜¯å¦è¿›å…¥äº†ç»ˆç«¯æ¨¡å¼
 int end_mode = 0;
 
-// ÎªBtcache½Úµã·ÖÅäÄÚ´æ¿Õ¼ä
+// ä¸ºBtcacheèŠ‚ç‚¹åˆ†é…å†…å­˜ç©ºé—´
 Btcache* initialize_btcache_node()
 {
 	Btcache *node;
@@ -88,7 +88,7 @@ Btcache* initialize_btcache_node()
 	return node;
 }
 
-// ´´½¨×Ü´óĞ¡Îª16K*1024¼´16MBµÄ»º³åÇø
+// åˆ›å»ºæ€»å¤§å°ä¸º16K*1024å³16MBçš„ç¼“å†²åŒº
 int create_btcache()
 {
 	int     i;
@@ -96,7 +96,7 @@ int create_btcache()
 
 	for(i = 0; i < btcache_len; i++) {
 		node = initialize_btcache_node();
-		if( node == NULL )  { 
+		if( node == NULL )  {
 			printf("%s:%d create_btcache error\n",__FILE__,__LINE__);
 			release_memory_in_btcache();
 			return -1;
@@ -112,7 +112,7 @@ int create_btcache()
 
 	last_slice_len = file_length % piece_length % (16*1024);
 	if(last_slice_len == 0)  last_slice_len = 16*1024;
-	
+
 	last_piece_index = pieces_length / 20 -1;
 
 	while(count > 0) {
@@ -136,7 +136,7 @@ int create_btcache()
 	return 0;
 }
 
-// ÊÍ·Å»º³åÇø¶¯Ì¬·ÖÅäµÄÄÚ´æ
+// é‡Šæ”¾ç¼“å†²åŒºåŠ¨æ€åˆ†é…çš„å†…å­˜
 void release_memory_in_btcache()
 {
 	Btcache *p;
@@ -165,11 +165,11 @@ void release_last_piece()
 	}
 }
 
-// ÅĞ¶ÏÖÖ×ÓÎÄ¼şÖĞ´ıÏÂÔØµÄÎÄ¼ş¸öÊı
+// åˆ¤æ–­ç§å­æ–‡ä»¶ä¸­å¾…ä¸‹è½½çš„æ–‡ä»¶ä¸ªæ•°
 int get_files_count()
 {
 	int count = 0;
-	
+
 	if(is_multi_files() == 0)  return 1;
 
 	Files *p = files_head;
@@ -177,37 +177,37 @@ int get_files_count()
 		count++;
 		p = p->next;
 	}
-	
+
 	return count;
 }
 
-// ¸ù¾İÖÖ×ÓÎÄ¼şÖĞµÄĞÅÏ¢´´½¨±£´æÏÂÔØÊı¾İµÄÎÄ¼ş
-// Í¨¹ılseekºÍwriteÁ½¸öº¯ÊıÀ´ÊµÏÖÎïÀí´æ´¢¿Õ¼äµÄ·ÖÅä
+// æ ¹æ®ç§å­æ–‡ä»¶ä¸­çš„ä¿¡æ¯åˆ›å»ºä¿å­˜ä¸‹è½½æ•°æ®çš„æ–‡ä»¶
+// é€šè¿‡lseekå’Œwriteä¸¤ä¸ªå‡½æ•°æ¥å®ç°ç‰©ç†å­˜å‚¨ç©ºé—´çš„åˆ†é…
 int create_files()
 {
 	int  ret, i;
 	char buff[1] = { 0x0 };
-	
+
 	fds_len = get_files_count();
 	if(fds_len < 0)  return -1;
-	
+
 	fds = (int *)malloc(fds_len * sizeof(int));
 	if(fds == NULL)  return -1;
-	
-	
-	if( is_multi_files() == 0 ) {  // ´ıÏÂÔØµÄÎªµ¥ÎÄ¼ş
+
+
+	if( is_multi_files() == 0 ) {  // å¾…ä¸‹è½½çš„ä¸ºå•æ–‡ä»¶
 
 		*fds = open(file_name,O_RDWR|O_CREAT,0777);
 		if(*fds < 0)  { printf("%s:%d error",__FILE__,__LINE__); return -1; }
-				
+
 		ret = lseek(*fds,file_length-1,SEEK_SET);
 		if(ret < 0)   { printf("%s:%d error",__FILE__,__LINE__); return -1; }
-		
+
 		ret = write(*fds,buff,1);
 		if(ret != 1)  { printf("%s:%d error",__FILE__,__LINE__); return -1; }
-				
-	} else {  // ´ıÏÂÔØµÄÊÇ¶à¸öÎÄ¼ş				
-		// ²é¿´Ä¿Â¼ÊÇ·ñÒÑ´´½¨,ÈôÃ»ÓĞÔò´´½¨
+
+	} else {  // å¾…ä¸‹è½½çš„æ˜¯å¤šä¸ªæ–‡ä»¶
+		// æŸ¥çœ‹ç›®å½•æ˜¯å¦å·²åˆ›å»º,è‹¥æ²¡æœ‰åˆ™åˆ›å»º
 		ret = chdir(file_name);
 		if(ret < 0) {
 			ret = mkdir(file_name,0777);
@@ -215,19 +215,19 @@ int create_files()
 			ret = chdir(file_name);
 			if(ret < 0)  { printf("%s:%d error",__FILE__,__LINE__); return -1; }
 		}
-					
+
 		Files *p = files_head;
 		i = 0;
 		while(p != NULL) {
 			fds[i] = open(p->path,O_RDWR|O_CREAT,0777);
 			if(fds[i] < 0) {printf("%s:%d error",__FILE__,__LINE__); return -1;}
-					
+
 			ret = lseek(fds[i],p->length-1,SEEK_SET);
 			if(ret < 0)    {printf("%s:%d error",__FILE__,__LINE__); return -1;}
-					
+
 			ret = write(fds[i],buff,1);
 			if(ret != 1)   {printf("%s:%d error",__FILE__,__LINE__); return -1;}
-				
+
 			p = p->next;
 			i++;
 		} //end while
@@ -236,7 +236,7 @@ int create_files()
 	return 0;
 }
 
-// ÅĞ¶ÏÒ»¸öBtcache½áµã(¼´Ò»¸öslice)ÖĞµÄÊı¾İÒªĞ´µ½ÄÄ¸öÎÄ¼şµÄÄÄ¸öÎ»ÖÃ,²¢Ğ´Èë
+// åˆ¤æ–­ä¸€ä¸ªBtcacheç»“ç‚¹(å³ä¸€ä¸ªslice)ä¸­çš„æ•°æ®è¦å†™åˆ°å“ªä¸ªæ–‡ä»¶çš„å“ªä¸ªä½ç½®,å¹¶å†™å…¥
 int write_btcache_node_to_harddisk(Btcache *node)
 {
 	long long     line_position;
@@ -245,19 +245,19 @@ int write_btcache_node_to_harddisk(Btcache *node)
 
 	if((node == NULL) || (fds == NULL))  return -1;
 
-	// ÎŞÂÛÊÇ·ñÏÂÔØ¶àÎÄ¼ş£¬½«ÒªÏÂÔØµÄËùÓĞÊı¾İ¿´³ÉÒ»¸öÏßĞÔ×Ö½ÚÁ÷
-	// line_positionÖ¸Ê¾ÒªĞ´ÈëÓ²ÅÌµÄÏßĞÔÎ»ÖÃ
-	// piece_lengthÎªÃ¿¸öpiece³¤¶È£¬Ëü±»¶¨ÒåÔÚparse_metafile.cÖĞ
+	// æ— è®ºæ˜¯å¦ä¸‹è½½å¤šæ–‡ä»¶ï¼Œå°†è¦ä¸‹è½½çš„æ‰€æœ‰æ•°æ®çœ‹æˆä¸€ä¸ªçº¿æ€§å­—èŠ‚æµ
+	// line_positionæŒ‡ç¤ºè¦å†™å…¥ç¡¬ç›˜çš„çº¿æ€§ä½ç½®
+	// piece_lengthä¸ºæ¯ä¸ªpieceé•¿åº¦ï¼Œå®ƒè¢«å®šä¹‰åœ¨parse_metafile.cä¸­
 	line_position = node->index * piece_length + node->begin;
 
-	if( is_multi_files() == 0 ) {  // Èç¹ûÏÂÔØµÄÊÇµ¥¸öÎÄ¼ş
+	if( is_multi_files() == 0 ) {  // å¦‚æœä¸‹è½½çš„æ˜¯å•ä¸ªæ–‡ä»¶
 		lseek(*fds,line_position,SEEK_SET);
 		write(*fds,node->buff,node->length);
 		return 0;
 	}
 
-	// ÏÂÔØµÄÊÇ¶à¸öÎÄ¼ş
-	if(files_head == NULL) { 
+	// ä¸‹è½½çš„æ˜¯å¤šä¸ªæ–‡ä»¶
+	if(files_head == NULL) {
 		printf("%s:%d file_head is NULL",__FILE__,__LINE__);
 		return -1;
 	}
@@ -265,40 +265,40 @@ int write_btcache_node_to_harddisk(Btcache *node)
 	i = 0;
 	while(p != NULL) {
 		if((line_position < p->length) && (line_position+node->length < p->length)) {
-			// ´ıĞ´ÈëµÄÊı¾İÊôÓÚÍ¬Ò»¸öÎÄ¼ş
+			// å¾…å†™å…¥çš„æ•°æ®å±äºåŒä¸€ä¸ªæ–‡ä»¶
 			lseek(fds[i],line_position,SEEK_SET);
 			write(fds[i],node->buff,node->length);
 			break;
-		} 
+		}
 		else if((line_position < p->length) && (line_position+node->length >= p->length)) {
-			// ´ıĞ´ÈëµÄÊı¾İ¿çÔ½ÁËÁ½¸öÎÄ¼ş»òÁ½¸öÒÔÉÏµÄÎÄ¼ş
-			int offset = 0;             // buffÄÚµÄÆ«ÒÆ,Ò²ÊÇÒÑĞ´µÄ×Ö½ÚÊı
-			int left   = node->length;  // Ê£ÓàÒªĞ´µÄ×Ö½ÚÊı
-			
+			// å¾…å†™å…¥çš„æ•°æ®è·¨è¶Šäº†ä¸¤ä¸ªæ–‡ä»¶æˆ–ä¸¤ä¸ªä»¥ä¸Šçš„æ–‡ä»¶
+			int offset = 0;             // buffå†…çš„åç§»,ä¹Ÿæ˜¯å·²å†™çš„å­—èŠ‚æ•°
+			int left   = node->length;  // å‰©ä½™è¦å†™çš„å­—èŠ‚æ•°
+
 			lseek(fds[i],line_position,SEEK_SET);
 			write(fds[i],node->buff,p->length - line_position);
-			offset = p->length - line_position;        // offset´æ·ÅÒÑĞ´µÄ×Ö½ÚÊı
-			left = left - (p->length - line_position); // »¹ĞèĞ´ÔÚ×Ö½ÚÊı
-			p = p->next;                               // ÓÃÓÚ»ñÈ¡ÏÂÒ»¸öÎÄ¼şµÄ³¤¶È
-			i++;                                       // »ñÈ¡ÏÂÒ»¸öÎÄ¼şÃèÊö·û
-			
+			offset = p->length - line_position;        // offsetå­˜æ”¾å·²å†™çš„å­—èŠ‚æ•°
+			left = left - (p->length - line_position); // è¿˜éœ€å†™åœ¨å­—èŠ‚æ•°
+			p = p->next;                               // ç”¨äºè·å–ä¸‹ä¸€ä¸ªæ–‡ä»¶çš„é•¿åº¦
+			i++;                                       // è·å–ä¸‹ä¸€ä¸ªæ–‡ä»¶æè¿°ç¬¦
+
 			while(left > 0)
-				if(p->length >= left) {  // µ±Ç°ÎÄ¼şµÄ³¤¶È´óÓÚµÈÓÚÒªĞ´µÄ×Ö½ÚÊı 
+				if(p->length >= left) {  // å½“å‰æ–‡ä»¶çš„é•¿åº¦å¤§äºç­‰äºè¦å†™çš„å­—èŠ‚æ•°
 					lseek(fds[i],0,SEEK_SET);
-					write(fds[i],node->buff+offset,left); // Ğ´ÈëÊ£ÓàÒªĞ´µÄ×Ö½ÚÊı
+					write(fds[i],node->buff+offset,left); // å†™å…¥å‰©ä½™è¦å†™çš„å­—èŠ‚æ•°
 					left = 0;
-				} else {  // µ±Ç°ÎÄ¼şµÄ³¤¶ÈĞ¡ÓÚÒªĞ´µÄ×Ö½ÚÊı
+				} else {  // å½“å‰æ–‡ä»¶çš„é•¿åº¦å°äºè¦å†™çš„å­—èŠ‚æ•°
 					lseek(fds[i],0,SEEK_SET);
-					write(fds[i],node->buff+offset,p->length); // Ğ´Âúµ±Ç°ÎÄ¼ş
+					write(fds[i],node->buff+offset,p->length); // å†™æ»¡å½“å‰æ–‡ä»¶
 					offset = offset + p->length;
 					left = left - p->length;
 					i++;
 					p = p->next;
 				}
-				
+
 				break;
 		} else {
-			// ´ıĞ´ÈëµÄÊı¾İ²»Ó¦Ğ´Èëµ±Ç°ÎÄ¼ş
+			// å¾…å†™å…¥çš„æ•°æ®ä¸åº”å†™å…¥å½“å‰æ–‡ä»¶
 			line_position = line_position - p->length;
 			i++;
 			p = p->next;
@@ -307,60 +307,60 @@ int write_btcache_node_to_harddisk(Btcache *node)
 	return 0;
 }
 
-// ´ÓÓ²ÅÌ¶Á³öÊı¾İ£¬´æ·Åµ½»º³åÇøÖĞ£¬ÔÚpeerĞèÒªÊ±·¢ËÍ¸øpeer
-// ¸Ãº¯Êı·Ç³£ÀàËÆÓÚwrite_btcache_node_to_harddisk
-// Òª¶ÁµÄpieceµÄË÷Òıindex£¬ÔÚpieceÖĞµÄÆğÊ¼Î»ÖÃbeginºÍ³¤¶ÈÒÑ´æµ½nodeÖ¸ÏòµÄ½ÚµãÖĞ
+// ä»ç¡¬ç›˜è¯»å‡ºæ•°æ®ï¼Œå­˜æ”¾åˆ°ç¼“å†²åŒºä¸­ï¼Œåœ¨peeréœ€è¦æ—¶å‘é€ç»™peer
+// è¯¥å‡½æ•°éå¸¸ç±»ä¼¼äºwrite_btcache_node_to_harddisk
+// è¦è¯»çš„pieceçš„ç´¢å¼•indexï¼Œåœ¨pieceä¸­çš„èµ·å§‹ä½ç½®beginå’Œé•¿åº¦å·²å­˜åˆ°nodeæŒ‡å‘çš„èŠ‚ç‚¹ä¸­
 int read_slice_from_harddisk(Btcache *node)
 {
 	unsigned int  line_position;
 	Files         *p;
 	int           i;
-	
+
 	if( (node == NULL) || (fds == NULL) )  return -1;
-	
+
 	if( (node->index >= pieces_length/20) || (node->begin >= piece_length) ||
 	    (node->length > 16*1024) )
 		return -1;
 
-	// ¼ÆËãÏßĞÔÆ«ÒÆÁ¿
+	// è®¡ç®—çº¿æ€§åç§»é‡
 	line_position = node->index * piece_length + node->begin;
-	
-	if( is_multi_files() == 0 ) {  // Èç¹ûÏÂÔØµÄÊÇµ¥¸öÎÄ¼ş
+
+	if( is_multi_files() == 0 ) {  // å¦‚æœä¸‹è½½çš„æ˜¯å•ä¸ªæ–‡ä»¶
 		lseek(*fds,line_position,SEEK_SET);
 		read(*fds,node->buff,node->length);
 		return 0;
 	}
-	
-	// Èç¹ûÏÂÔØµÄÊÇ¶à¸öÎÄ¼ş
+
+	// å¦‚æœä¸‹è½½çš„æ˜¯å¤šä¸ªæ–‡ä»¶
 	if(files_head == NULL)  get_files_length_path();
 	p = files_head;
 	i = 0;
 	while(p != NULL) {
 		if((line_position < p->length) && (line_position+node->length < p->length)) {
-			// ´ı¶Á³öµÄÊı¾İÊôÓÚÍ¬Ò»¸öÎÄ¼ş
+			// å¾…è¯»å‡ºçš„æ•°æ®å±äºåŒä¸€ä¸ªæ–‡ä»¶
 			lseek(fds[i],line_position,SEEK_SET);
 			read(fds[i],node->buff,node->length);
 			break;
 		} else if((line_position < p->length) && (line_position+node->length >= p->length)) {
-			// ´ı¶Á³öµÄÊı¾İ¿çÔ½ÁËÁ½¸öÎÄ¼ş»òÁ½¸öÒÔÉÏµÄÎÄ¼ş
-			int offset = 0;             // buffÄÚµÄÆ«ÒÆ,Ò²ÊÇÒÑ¶ÁµÄ×Ö½ÚÊı
-			int left   = node->length;  // Ê£ÓàÒª¶ÁµÄ×Ö½ÚÊı
+			// å¾…è¯»å‡ºçš„æ•°æ®è·¨è¶Šäº†ä¸¤ä¸ªæ–‡ä»¶æˆ–ä¸¤ä¸ªä»¥ä¸Šçš„æ–‡ä»¶
+			int offset = 0;             // buffå†…çš„åç§»,ä¹Ÿæ˜¯å·²è¯»çš„å­—èŠ‚æ•°
+			int left   = node->length;  // å‰©ä½™è¦è¯»çš„å­—èŠ‚æ•°
 
 			lseek(fds[i],line_position,SEEK_SET);
 			read(fds[i],node->buff,p->length - line_position);
-			offset = p->length - line_position;        // offset´æ·ÅÒÑ¶ÁµÄ×Ö½ÚÊı
-			left = left - (p->length - line_position); // »¹Ğè¶ÁÔÚ×Ö½ÚÊı
-			p = p->next;                               // ÓÃÓÚ»ñÈ¡ÏÂÒ»¸öÎÄ¼şµÄ³¤¶È
-			i++;                                       // »ñÈ¡ÏÂÒ»¸öÎÄ¼şÃèÊö·û
+			offset = p->length - line_position;        // offsetå­˜æ”¾å·²è¯»çš„å­—èŠ‚æ•°
+			left = left - (p->length - line_position); // è¿˜éœ€è¯»åœ¨å­—èŠ‚æ•°
+			p = p->next;                               // ç”¨äºè·å–ä¸‹ä¸€ä¸ªæ–‡ä»¶çš„é•¿åº¦
+			i++;                                       // è·å–ä¸‹ä¸€ä¸ªæ–‡ä»¶æè¿°ç¬¦
 
 			while(left > 0)
-				if(p->length >= left) {  // µ±Ç°ÎÄ¼şµÄ³¤¶È´óÓÚµÈÓÚÒª¶ÁµÄ×Ö½ÚÊı 
+				if(p->length >= left) {  // å½“å‰æ–‡ä»¶çš„é•¿åº¦å¤§äºç­‰äºè¦è¯»çš„å­—èŠ‚æ•°
 					lseek(fds[i],0,SEEK_SET);
-					read(fds[i],node->buff+offset,left); // ¶ÁÈ¡Ê£ÓàÒª¶ÁµÄ×Ö½ÚÊı
+					read(fds[i],node->buff+offset,left); // è¯»å–å‰©ä½™è¦è¯»çš„å­—èŠ‚æ•°
 					left = 0;
-				} else {  // µ±Ç°ÎÄ¼şµÄ³¤¶ÈĞ¡ÓÚÒª¶ÁµÄ×Ö½ÚÊı
+				} else {  // å½“å‰æ–‡ä»¶çš„é•¿åº¦å°äºè¦è¯»çš„å­—èŠ‚æ•°
 					lseek(fds[i],0,SEEK_SET);
-					read(fds[i],node->buff+offset,p->length); // ¶ÁÈ¡µ±Ç°ÎÄ¼şµÄËùÓĞÄÚÈİ
+					read(fds[i],node->buff+offset,p->length); // è¯»å–å½“å‰æ–‡ä»¶çš„æ‰€æœ‰å†…å®¹
 					offset = offset + p->length;
 					left = left - p->length;
 					i++;
@@ -369,7 +369,7 @@ int read_slice_from_harddisk(Btcache *node)
 
 			break;
 		} else {
-			// ´ı¶Á³öµÄÊı¾İ²»Ó¦Ğ´Èëµ±Ç°ÎÄ¼ş
+			// å¾…è¯»å‡ºçš„æ•°æ®ä¸åº”å†™å…¥å½“å‰æ–‡ä»¶
 			line_position = line_position - p->length;
 			i++;
 			p = p->next;
@@ -378,7 +378,7 @@ int read_slice_from_harddisk(Btcache *node)
 	return 0;
 }
 
-// ÔÚpeer¶ÓÁĞÖĞÉ¾³ı¶ÔÄ³¸öpieceµÄÇëÇó
+// åœ¨peeré˜Ÿåˆ—ä¸­åˆ é™¤å¯¹æŸä¸ªpieceçš„è¯·æ±‚
 int delete_request_end_mode(int index)
 {
 	Peer          *p = peer_head;
@@ -400,14 +400,14 @@ int delete_request_end_mode(int index)
 			req_q = req_p;
 			req_p = req_p->next;
 		}
-		
+
 		p = p->next;
 	}
 
 	return 0;
 }
 
-// ¼ì²éÒ»¸öpieceµÄÊı¾İÊÇ·ñÕıÈ·,ÈôÕıÈ·´æÈëÓ²ÅÌ
+// æ£€æŸ¥ä¸€ä¸ªpieceçš„æ•°æ®æ˜¯å¦æ­£ç¡®,è‹¥æ­£ç¡®å­˜å…¥ç¡¬ç›˜
 int write_piece_to_harddisk(int sequnce,Peer *peer)
 {
 	Btcache        *node_ptr = btcache_head, *p;
@@ -419,9 +419,9 @@ int write_piece_to_harddisk(int sequnce,Peer *peer)
 
 	int i = 0;
 	while(i < sequnce)  { node_ptr = node_ptr->next; i++; }
-	p = node_ptr;  // pÖ¸ÏòpieceµÄµÚÒ»¸ösliceËùÔÚµÄbtcache½áµã
+	p = node_ptr;  // pæŒ‡å‘pieceçš„ç¬¬ä¸€ä¸ªsliceæ‰€åœ¨çš„btcacheç»“ç‚¹
 
-	// Ğ£ÑépieceµÄHASHÖµ
+	// æ ¡éªŒpieceçš„HASHå€¼
 	SHA1_CTX ctx;
 	SHA1Init(&ctx);
 	while(slice_count>0 && node_ptr!=NULL) {
@@ -430,26 +430,26 @@ int write_piece_to_harddisk(int sequnce,Peer *peer)
 		node_ptr = node_ptr->next;
 	}
 	SHA1Final(piece_hash1,&ctx);
-	
+
 	index = p->index * 20;
-	index_copy = p->index;  // ´æ·ÅpieceµÄindex
+	index_copy = p->index;  // å­˜æ”¾pieceçš„index
 	for(i = 0; i < 20; i++)  piece_hash2[i] = pieces[index+i];
 
 	int ret = memcmp(piece_hash1,piece_hash2,20);
 	if(ret != 0)  { printf("piece hash is wrong\n"); return -1; }
-	
+
 	node_ptr = p;
-	slice_count = piece_length / (16*1024); 
+	slice_count = piece_length / (16*1024);
 	while(slice_count > 0) {
 		write_btcache_node_to_harddisk(node_ptr);
 
-		// ÔÚpeerÖĞµÄÇëÇó¶ÓÁĞÖĞÉ¾³ıpieceÇëÇó
+		// åœ¨peerä¸­çš„è¯·æ±‚é˜Ÿåˆ—ä¸­åˆ é™¤pieceè¯·æ±‚
 		Request_piece *req_p = peer->Request_piece_head;
 		Request_piece *req_q = peer->Request_piece_head;
 		while(req_p != NULL) {
 			if(req_p->begin==node_ptr->begin && req_p->index==node_ptr->index)
 			{
-				if(req_p == peer->Request_piece_head) 
+				if(req_p == peer->Request_piece_head)
 					peer->Request_piece_head = req_p->next;
 				else
 					req_q->next = req_p->next;
@@ -464,7 +464,7 @@ int write_piece_to_harddisk(int sequnce,Peer *peer)
 		node_ptr->index  = -1;
 		node_ptr->begin  = -1;
 		node_ptr->length = -1;
-		
+
 		node_ptr->in_use       = 0;
 		node_ptr->read_write   = -1;
 		node_ptr->is_full      = 0;
@@ -474,17 +474,17 @@ int write_piece_to_harddisk(int sequnce,Peer *peer)
 		node_ptr = node_ptr->next;
 		slice_count--;
 	}
-	
+
 	if(end_mode == 1)  delete_request_end_mode(index_copy);
 
-	// ¸üĞÂÎ»Í¼
+	// æ›´æ–°ä½å›¾
 	set_bit_value(bitmap,index_copy,1);
 
-	// ×¼±¸·¢ËÍhaveÏûÏ¢
+	// å‡†å¤‡å‘é€haveæ¶ˆæ¯
 	for(i = 0; i < 64; i++) {
-		if(have_piece_index[i] == -1) { 
-			have_piece_index[i] = index_copy; 
-			break; 
+		if(have_piece_index[i] == -1) {
+			have_piece_index[i] = index_copy;
+			break;
 		}
 	}
 
@@ -493,13 +493,13 @@ int write_piece_to_harddisk(int sequnce,Peer *peer)
 
 	printf("%%%%%% Total piece download:%d %%%%%%\n",download_piece_num);
 	printf("writed piece index:%d  total pieces:%d\n",index_copy,pieces_length/20);
-	compute_total_rate();   // ¼ÆËã×ÜµÄÏÂÔØ¡¢ÉÏ´«ËÙ¶È
-	print_process_info();   // ´òÓ¡ÏÂÔØ½ø¶ÈĞÅÏ¢
+	compute_total_rate();   // è®¡ç®—æ€»çš„ä¸‹è½½ã€ä¸Šä¼ é€Ÿåº¦
+	print_process_info();   // æ‰“å°ä¸‹è½½è¿›åº¦ä¿¡æ¯
 
 	return 0;
 }
 
-// ´ÓÓ²ÅÌÉÏ¶ÁÈ¡Ò»¸öpieceµ½pËùÖ¸ÏòµÄ»º³åÇøÖĞ
+// ä»ç¡¬ç›˜ä¸Šè¯»å–ä¸€ä¸ªpieceåˆ°pæ‰€æŒ‡å‘çš„ç¼“å†²åŒºä¸­
 int read_piece_from_harddisk(Btcache *p, int index)
 {
 	Btcache  *node_ptr   = p;
@@ -532,7 +532,7 @@ int read_piece_from_harddisk(Btcache *p, int index)
 	return 0;
 }
 
-// ½«16MB»º³åÇøÖĞÒÑÏÂÔØµÄpieceĞ´ÈëÓ²ÅÌ,ÕâÑù¿ÉÒÔÊÍ·Å»º³åÇø
+// å°†16MBç¼“å†²åŒºä¸­å·²ä¸‹è½½çš„pieceå†™å…¥ç¡¬ç›˜,è¿™æ ·å¯ä»¥é‡Šæ”¾ç¼“å†²åŒº
 int write_btcache_to_harddisk(Peer *peer)
 {
 	Btcache          *p = btcache_head;
@@ -547,7 +547,7 @@ int write_btcache_to_harddisk(Peer *peer)
 			first_index = index_count;
 		}
 
-		if( (p->in_use  == 1) && (p->read_write == 1) && 
+		if( (p->in_use  == 1) && (p->read_write == 1) &&
 			(p->is_full == 1) && (p->is_writed  == 0) ) {
 			full_count++;
 		}
@@ -563,7 +563,7 @@ int write_btcache_to_harddisk(Peer *peer)
 	return 0;
 }
 
-// µ±»º³åÇø²»¹»ÓÃÊ±,ÊÍ·ÅÄÇĞ©´ÓÓ²ÅÌÉÏ¶ÁÈ¡µÄpiece
+// å½“ç¼“å†²åŒºä¸å¤Ÿç”¨æ—¶,é‡Šæ”¾é‚£äº›ä»ç¡¬ç›˜ä¸Šè¯»å–çš„piece
 int release_read_btcache_node(int base_count)
 {
 	Btcache           *p = btcache_head;
@@ -577,8 +577,8 @@ int release_read_btcache_node(int base_count)
 	while(p != NULL) {
 		if(count % slice_count == 0)  { used_count = 0; q = p; }
 		if(p->in_use==1 && p->read_write==0)  used_count += p->access_count;
-		if(used_count == base_count)  break;  // ÕÒµ½Ò»¸ö¿ÕÏĞµÄpiece
-		
+		if(used_count == base_count)  break;  // æ‰¾åˆ°ä¸€ä¸ªç©ºé—²çš„piece
+
 		count++;
 		p = p->next;
 	}
@@ -589,7 +589,7 @@ int release_read_btcache_node(int base_count)
 			p->index  = -1;
 			p->begin  = -1;
 			p->length = -1;
-			
+
 			p->in_use       =  0;
 			p->read_write   = -1;
 			p->is_full      =  0;
@@ -604,8 +604,8 @@ int release_read_btcache_node(int base_count)
 	return 0;
 }
 
-// ÏÂÔØÍêÒ»¸ösliceºó,¼ì²éÊÇ·ñ¸ÃsliceÎªÒ»¸öpiece×îºóÒ»¿é
-// ÈôÊÇÔòĞ´ÈëÓ²ÅÌ,Ö»¶Ô¸Õ¸Õ¿ªÊ¼ÏÂÔØÊ±Æğ×÷ÓÃ,ÕâÑù¿ÉÒÔÁ¢¼´Ê¹peerµÃÖª
+// ä¸‹è½½å®Œä¸€ä¸ªsliceå,æ£€æŸ¥æ˜¯å¦è¯¥sliceä¸ºä¸€ä¸ªpieceæœ€åä¸€å—
+// è‹¥æ˜¯åˆ™å†™å…¥ç¡¬ç›˜,åªå¯¹åˆšåˆšå¼€å§‹ä¸‹è½½æ—¶èµ·ä½œç”¨,è¿™æ ·å¯ä»¥ç«‹å³ä½¿peerå¾—çŸ¥
 int is_a_complete_piece(int index, int *sequnce)
 {
 	Btcache          *p = btcache_head;
@@ -620,17 +620,17 @@ int is_a_complete_piece(int index, int *sequnce)
 			while(num>0 && p!=NULL)  { p = p->next; num--; count++; }
 			continue;
 		}
-		if( count%slice_count!=0 || p->read_write!=1 || p->is_full!=1) 
+		if( count%slice_count!=0 || p->read_write!=1 || p->is_full!=1)
 			break;
 
 		*sequnce = count;
 		num = slice_count;
-	
+
 		while(num>0 && p!=NULL) {
 			if(p->index==index && p->read_write==1 && p->is_full==1)
 				 complete++;
 			else break;
-	
+
 			num--;
 			p = p->next;
 		}
@@ -642,7 +642,7 @@ int is_a_complete_piece(int index, int *sequnce)
 	else return 0;
 }
 
-// ½«16MBµÄ»º³åÇøÖĞËù´æµÄËùÓĞÊı¾İÇå¿Õ
+// å°†16MBçš„ç¼“å†²åŒºä¸­æ‰€å­˜çš„æ‰€æœ‰æ•°æ®æ¸…ç©º
 void clear_btcache()
 {
 	Btcache *node = btcache_head;
@@ -650,24 +650,24 @@ void clear_btcache()
 		node->index  = -1;
 		node->begin  = -1;
 		node->length = -1;
-		
+
 		node->in_use       =  0;
 		node->read_write   = -1;
 		node->is_full      =  0;
 		node->is_writed    =  0;
 		node->access_count =  0;
-		
+
 		node = node->next;
 	}
 }
 
-// ½«´Ópeer´¦»ñÈ¡µÄÒ»¸öslice´æ´¢µ½»º³åÇøÖĞ
+// å°†ä»peerå¤„è·å–çš„ä¸€ä¸ªsliceå­˜å‚¨åˆ°ç¼“å†²åŒºä¸­
 int write_slice_to_btcache(int index,int begin,int length,
 						   unsigned char *buff,int len,Peer *peer)
 {
 	int     count = 0, slice_count, unuse_count;
-	Btcache *p = btcache_head, *q = NULL;  // qÖ¸ÏòÃ¿¸öpieceµÚÒ»¸öslice
-	
+	Btcache *p = btcache_head, *q = NULL;  // qæŒ‡å‘æ¯ä¸ªpieceç¬¬ä¸€ä¸ªslice
+
 	if(p == NULL)  return -1;
 	if(index>=pieces_length/20 || begin>piece_length-16*1024)  return -1;
 	if(buff==NULL || peer==NULL)  return -1;
@@ -680,9 +680,9 @@ int write_slice_to_btcache(int index,int begin,int length,
 	if(end_mode == 1) {
 		if( get_bit_value(bitmap,index) == 1 )  return 0;
 	}
-	
-	// ±éÀú»º³åÇø,¼ì²éµ±Ç°sliceËùÔÚµÄpieceµÄÆäËûÊı¾İÊÇ·ñÒÑ´æÔÚ
-	// Èô´æÔÚËµÃ÷²»ÊÇÒ»¸öĞÂµÄpiece,Èô²»´æÔÚËµÃ÷ÊÇÒ»¸öĞÂµÄpiece
+
+	// éå†ç¼“å†²åŒº,æ£€æŸ¥å½“å‰sliceæ‰€åœ¨çš„pieceçš„å…¶ä»–æ•°æ®æ˜¯å¦å·²å­˜åœ¨
+	// è‹¥å­˜åœ¨è¯´æ˜ä¸æ˜¯ä¸€ä¸ªæ–°çš„piece,è‹¥ä¸å­˜åœ¨è¯´æ˜æ˜¯ä¸€ä¸ªæ–°çš„piece
 	slice_count = piece_length / (16*1024);
 	while(p != NULL) {
 		if(count%slice_count == 0)  q = p;
@@ -691,31 +691,31 @@ int write_slice_to_btcache(int index,int begin,int length,
 		count++;
 		p = p->next;
 	}
-	
-	// p·Ç¿ÕËµÃ÷µ±Ç°sliceËùÔÚµÄpieceµÄÓĞĞ©Êı¾İÒÑ¾­ÏÂÔØ
+
+	// péç©ºè¯´æ˜å½“å‰sliceæ‰€åœ¨çš„pieceçš„æœ‰äº›æ•°æ®å·²ç»ä¸‹è½½
 	if(p != NULL) {
-		count = begin / (16*1024);  // count´æ·Åµ±Ç°Òª´æµÄsliceÔÚpieceÖĞµÄË÷Òı
+		count = begin / (16*1024);  // countå­˜æ”¾å½“å‰è¦å­˜çš„sliceåœ¨pieceä¸­çš„ç´¢å¼•
 		p = q;
 		while(count > 0)  { p = p->next; count--; }
-		
+
 		if(p->begin==begin && p->in_use==1 && p->read_write==1 && p->is_full==1)
-			return 0; // ¸ÃsliceÒÑ´æÔÚ
-		
+			return 0; // è¯¥sliceå·²å­˜åœ¨
+
 		p->index  = index;
 		p->begin  = begin;
 		p->length = length;
-		
+
 		p->in_use       = 1;
 		p->read_write   = 1;
 		p->is_full      = 1;
 		p->is_writed    = 0;
 		p->access_count = 0;
-		
+
 		memcpy(p->buff,buff,len);
 		printf("+++++ write a slice to btcache index:%-6d begin:%-6x +++++\n",
 			   index,begin);
-		
-		// Èç¹ûÊÇ¸Õ¸Õ¿ªÊ¼ÏÂÔØ(ÏÂÔØµ½µÄpiece²»×ã10¸ö),ÔòÁ¢¼´Ğ´ÈëÓ²ÅÌ,²¢¸æÖªpeer
+
+		// å¦‚æœæ˜¯åˆšåˆšå¼€å§‹ä¸‹è½½(ä¸‹è½½åˆ°çš„pieceä¸è¶³10ä¸ª),åˆ™ç«‹å³å†™å…¥ç¡¬ç›˜,å¹¶å‘ŠçŸ¥peer
 		if(download_piece_num < 1000) {
 			int sequece;
 			int ret;
@@ -728,26 +728,26 @@ int write_slice_to_btcache(int index,int begin,int length,
 		}
 		return 0;
 	}
-	
-	// pÎª¿ÕËµÃ÷µ±Ç°sliceÊÇÆäËùÔÚµÄpieceµÄµÚÒ»¿éÏÂÔØµ½µÄÊı¾İ
-	// Ê×ÏÈÅĞ¶ÏÊÇ·ñ´æÔÚ¿ÕµÄ»º³åÇø,Èô²»´æÔÚ,Ôò½«ÒÑÏÂÔØµÄĞ´ÈëÓ²ÅÌ
+
+	// pä¸ºç©ºè¯´æ˜å½“å‰sliceæ˜¯å…¶æ‰€åœ¨çš„pieceçš„ç¬¬ä¸€å—ä¸‹è½½åˆ°çš„æ•°æ®
+	// é¦–å…ˆåˆ¤æ–­æ˜¯å¦å­˜åœ¨ç©ºçš„ç¼“å†²åŒº,è‹¥ä¸å­˜åœ¨,åˆ™å°†å·²ä¸‹è½½çš„å†™å…¥ç¡¬ç›˜
 	int i = 4;
 	while(i > 0) {
 		slice_count = piece_length / (16*1024);
-		count       = 0;  // ¼ÆÊıµ±Ç°Ö¸ÏòµÚ¼¸¸öslice
-		unuse_count = 0;  // ¼ÆÊıµ±Ç°pieceÖĞÓĞ¶àÉÙ¸ö¿ÕµÄslice
-		Btcache *q;       
+		count       = 0;  // è®¡æ•°å½“å‰æŒ‡å‘ç¬¬å‡ ä¸ªslice
+		unuse_count = 0;  // è®¡æ•°å½“å‰pieceä¸­æœ‰å¤šå°‘ä¸ªç©ºçš„slice
+		Btcache *q;
 		p = btcache_head;
-		
+
 		while(p != NULL) {
 			if(count%slice_count == 0)  { unuse_count = 0; q = p; }
 			if(p->in_use == 0) unuse_count++;
-			if(unuse_count == slice_count)  break;  // ÕÒµ½Ò»¸ö¿ÕÏĞµÄpiece
-			
+			if(unuse_count == slice_count)  break;  // æ‰¾åˆ°ä¸€ä¸ªç©ºé—²çš„piece
+
 			count++;
 			p = p->next;
 		}
-		
+
 		if(p != NULL) {
 			p = q;
 			count = begin / (16*1024);
@@ -756,41 +756,41 @@ int write_slice_to_btcache(int index,int begin,int length,
 			p->index  = index;
 			p->begin  = begin;
 			p->length = length;
-			
+
 			p->in_use       = 1;
 			p->read_write   = 1;
 			p->is_full      = 1;
 			p->is_writed    = 0;
 			p->access_count = 0;
-			
+
 			memcpy(p->buff,buff,len);
 			printf("+++++ write a slice to btcache index:%-6d begin:%-6x +++++\n",
 				   index,begin);
 			return 0;
 		}
-		
+
 		if(i == 4) write_btcache_to_harddisk(peer);
 		if(i == 3) release_read_btcache_node(16);
 		if(i == 2) release_read_btcache_node(8);
 		if(i == 1) release_read_btcache_node(0);
 		i--;
 	}
-	
-	// Èç¹û»¹Ã»ÓĞ¿ÕÏĞµÄ»º³åÇø,¶ªÆúÏÂÔØµ½Õâ¸öslice
+
+	// å¦‚æœè¿˜æ²¡æœ‰ç©ºé—²çš„ç¼“å†²åŒº,ä¸¢å¼ƒä¸‹è½½åˆ°è¿™ä¸ªslice
 	printf("+++++ write a slice to btcache FAILED :NO BUFFER +++++\n");
 	clear_btcache();
 
 	return 0;
 }
 
-// ´Ó»º³åÇø»ñÈ¡Ò»¸öslice,¶ÁÈ¡µÄslice´æ·Åµ½buffÖ¸ÏòµÄÊı×éÖĞ
-// Èô»º³åÇøÖĞ²»´æÔÚ¸Ãslice,Ôò´ÓÓ²ÅÌ¶ÁsliceËùÔÚµÄpieceµ½»º³åÇøÖĞ
+// ä»ç¼“å†²åŒºè·å–ä¸€ä¸ªslice,è¯»å–çš„sliceå­˜æ”¾åˆ°buffæŒ‡å‘çš„æ•°ç»„ä¸­
+// è‹¥ç¼“å†²åŒºä¸­ä¸å­˜åœ¨è¯¥slice,åˆ™ä»ç¡¬ç›˜è¯»sliceæ‰€åœ¨çš„pieceåˆ°ç¼“å†²åŒºä¸­
 int read_slice_for_send(int index,int begin,int length,Peer *peer)
 {
-	Btcache  *p = btcache_head, *q;  // qÖ¸ÏòÃ¿¸öpieceµÚÒ»¸öslice
+	Btcache  *p = btcache_head, *q;  // qæŒ‡å‘æ¯ä¸ªpieceç¬¬ä¸€ä¸ªslice
 	int       ret;
-	
-	// ¼ì²é²ÎÊıÊÇ·ñÓĞÎó
+
+	// æ£€æŸ¥å‚æ•°æ˜¯å¦æœ‰è¯¯
 	if(index>=pieces_length/20 || begin>piece_length-16*1024)  return -1;
 
 	ret = get_bit_value(bitmap,index);
@@ -801,11 +801,11 @@ int read_slice_for_send(int index,int begin,int length,Peer *peer)
 		return 0;
 	}
 
-	// ´ı»ñÈ¡µÃslice»º³åÇøÖĞÒÑ´æÔÚ
+	// å¾…è·å–å¾—sliceç¼“å†²åŒºä¸­å·²å­˜åœ¨
 	while(p != NULL) {
 		if(p->index==index && p->begin==begin && p->length==length &&
 		   p->in_use==1 && p->is_full==1) {
-			// ¹¹ÔìpieceÏûÏ¢
+			// æ„é€ pieceæ¶ˆæ¯
 			ret = create_piece_msg(index,begin,p->buff,p->length,peer);
 			if(ret < 0) { printf("Function create piece msg error\n"); return -1; }
 			p->access_count = 1;
@@ -817,18 +817,18 @@ int read_slice_for_send(int index,int begin,int length,Peer *peer)
 	int i = 4, count, slice_count, unuse_count;
 	while(i > 0) {
 		slice_count = piece_length / (16*1024);
-		count = 0;  // ¼ÆÊıµ±Ç°Ö¸ÏòµÚ¼¸¸öslice
+		count = 0;  // è®¡æ•°å½“å‰æŒ‡å‘ç¬¬å‡ ä¸ªslice
 		p = btcache_head;
 
 		while(p != NULL) {
 			if(count%slice_count == 0)  { unuse_count = 0; q = p; }
 			if(p->in_use == 0) unuse_count++;
-			if(unuse_count == slice_count)  break;  // ÕÒµ½Ò»¸ö¿ÕÏĞµÄpiece
-			
+			if(unuse_count == slice_count)  break;  // æ‰¾åˆ°ä¸€ä¸ªç©ºé—²çš„piece
+
 			count++;
 			p = p->next;
 		}
-		
+
 		if(p != NULL) {
 			read_piece_from_harddisk(q,index);
 
@@ -836,7 +836,7 @@ int read_slice_for_send(int index,int begin,int length,Peer *peer)
 			while(p != NULL) {
 				if(p->index==index && p->begin==begin && p->length==length &&
 					p->in_use==1 && p->is_full==1) {
-					// ¹¹ÔìpieceÏûÏ¢
+					// æ„é€ pieceæ¶ˆæ¯
 					ret = create_piece_msg(index,begin,p->buff,p->length,peer);
 					if(ret < 0) { printf("Function create piece msg error\n"); return -1; }
 					p->access_count = 1;
@@ -845,7 +845,7 @@ int read_slice_for_send(int index,int begin,int length,Peer *peer)
 				p = p->next;
 			}
 		}
-		
+
 		if(i == 4) write_btcache_to_harddisk(peer);
 		if(i == 3) release_read_btcache_node(16);
 		if(i == 2) release_read_btcache_node(8);
@@ -853,17 +853,17 @@ int read_slice_for_send(int index,int begin,int length,Peer *peer)
 		i--;
 	}
 
-	// Èç¹ûÊµÔÚÃ»ÓĞ»º³åÇøÁË,¾Í²»¶ÁsliceËùÔÚµÄpieceµ½»º³åÇøÖĞ
+	// å¦‚æœå®åœ¨æ²¡æœ‰ç¼“å†²åŒºäº†,å°±ä¸è¯»sliceæ‰€åœ¨çš„pieceåˆ°ç¼“å†²åŒºä¸­
 	p = initialize_btcache_node();
 	if(p == NULL)  { printf("%s:%d allocate memory error",__FILE__,__LINE__); return -1; }
 	p->index  = index;
 	p->begin  = begin;
 	p->length = length;
 	read_slice_from_harddisk(p);
-	// ¹¹ÔìpieceÏûÏ¢
+	// æ„é€ pieceæ¶ˆæ¯
 	ret = create_piece_msg(index,begin,p->buff,p->length,peer);
 	if(ret < 0) { printf("Function create piece msg error\n"); return -1; }
-	// ÊÍ·Å¸Õ¸ÕÉêÇëµÄÄÚ´æ
+	// é‡Šæ”¾åˆšåˆšç”³è¯·çš„å†…å­˜
 	if(p->buff != NULL)  free(p->buff);
 	if(p != NULL) free(p);
 
@@ -887,7 +887,7 @@ void clear_btcache_before_peer_close(Peer *peer)
 			p->index  = -1;
 			p->begin  = -1;
 			p->length = -1;
-			
+
 			p->in_use       =  0;
 			p->read_write   = -1;
 			p->is_full      =  0;
@@ -899,18 +899,18 @@ void clear_btcache_before_peer_close(Peer *peer)
 }
 
 
-// Õë¶ÔÏÂÔØ×îºóÒ»¸öpieceµÄÎÊÌâ,ĞŞ¸ÄÒÔÏÂ¼¸´¦£º
-// ÔÚdata.cÍ·²¿Ôö¼ÓÁË¼¸¸öÈ«¾Ö±äÁ¿
-// ÔÚdata.cÖĞĞŞ¸ÄÁË³õÊ¼·ÖÅä¶¯Ì¬ÄÚ´æº¯ÊıºÍ×îÖÕÊÍ·Å¶¯Ì¬ÄÚ´æµÄº¯Êı
-// ÔÚrate.cÖĞĞŞ¸ÄÁËcreate_req_slice_msgº¯Êı
-// ÔÚdata.cÖĞÔö¼ÓÁËÒÔÏÂ4¸öº¯Êı
+// é’ˆå¯¹ä¸‹è½½æœ€åä¸€ä¸ªpieceçš„é—®é¢˜,ä¿®æ”¹ä»¥ä¸‹å‡ å¤„ï¼š
+// åœ¨data.cå¤´éƒ¨å¢åŠ äº†å‡ ä¸ªå…¨å±€å˜é‡
+// åœ¨data.cä¸­ä¿®æ”¹äº†åˆå§‹åˆ†é…åŠ¨æ€å†…å­˜å‡½æ•°å’Œæœ€ç»ˆé‡Šæ”¾åŠ¨æ€å†…å­˜çš„å‡½æ•°
+// åœ¨rate.cä¸­ä¿®æ”¹äº†create_req_slice_msgå‡½æ•°
+// åœ¨data.cä¸­å¢åŠ äº†ä»¥ä¸‹4ä¸ªå‡½æ•°
 int write_last_piece_to_btcache(Peer *peer)
 {
 	int            index = last_piece_index, i;
 	unsigned char  piece_hash1[20], piece_hash2[20];
 	Btcache        *p = last_piece;
 
-	// Ğ£ÑépieceµÄHASHÖµ
+	// æ ¡éªŒpieceçš„HASHå€¼
 	SHA1_CTX ctx;
 	SHA1Init(&ctx);
 	while(p != NULL) {
@@ -918,7 +918,7 @@ int write_last_piece_to_btcache(Peer *peer)
 		p = p->next;
 	}
 	SHA1Final(piece_hash1,&ctx);
-	
+
 	for(i = 0; i < 20; i++)  piece_hash2[i] = pieces[index*20+i];
 
 	if(memcmp(piece_hash1,piece_hash2,20) == 0) {
@@ -935,16 +935,16 @@ int write_last_piece_to_btcache(Peer *peer)
 	}
 	printf("@@@@@@  last piece write to harddisk OK @@@@@@\n");
 
-	// ÔÚpeerÖĞµÄÇëÇó¶ÓÁĞÖĞÉ¾³ıpieceÇëÇó
+	// åœ¨peerä¸­çš„è¯·æ±‚é˜Ÿåˆ—ä¸­åˆ é™¤pieceè¯·æ±‚
 
-	// ¸üĞÂÎ»Í¼
+	// æ›´æ–°ä½å›¾
 	set_bit_value(bitmap,index,1);
-	
-	// ×¼±¸·¢ËÍhaveÏûÏ¢
+
+	// å‡†å¤‡å‘é€haveæ¶ˆæ¯
 	for(i = 0; i < 64; i++) {
-		if(have_piece_index[i] == -1) { 
-			have_piece_index[i] = index; 
-			break; 
+		if(have_piece_index[i] == -1) {
+			have_piece_index[i] = index;
+			break;
 		}
 	}
 
@@ -961,7 +961,7 @@ int write_slice_to_last_piece(int index,int begin,int length,
 		return -1;
 	if(buff==NULL || peer==NULL)  return -1;
 
-	// ¶¨Î»µ½ÒªĞ´ÈëÄÄ¸öslice
+	// å®šä½åˆ°è¦å†™å…¥å“ªä¸ªslice
 	int count = begin / (16*1024);
 	Btcache *p = last_piece;
 	while(p != NULL && count > 0) {
@@ -970,8 +970,8 @@ int write_slice_to_last_piece(int index,int begin,int length,
 	}
 
 	if(p->begin==begin && p->in_use==1 && p->is_full==1)
-		return 0; // ¸ÃsliceÒÑ´æÔÚ
-	
+		return 0; // è¯¥sliceå·²å­˜åœ¨
+
 	p->index  = index;
 	p->begin  = begin;
 	p->length = length;
@@ -981,7 +981,7 @@ int write_slice_to_last_piece(int index,int begin,int length,
 	p->is_full      = 1;
 	p->is_writed    = 0;
 	p->access_count = 0;
-	
+
 	memcpy(p->buff,buff,len);
 
 	p = last_piece;
@@ -1001,32 +1001,32 @@ int read_last_piece_from_harddisk(Btcache *p, int index)
 	Btcache  *node_ptr   = p;
 	int      begin       = 0;
 	int      length      = 16*1024;
-	int      slice_count = last_piece_count; 
+	int      slice_count = last_piece_count;
 	int      ret;
-	
+
 	if(p==NULL || index != last_piece_index)  return -1;
-	
+
 	while(slice_count > 0) {
 		node_ptr->index  = index;
 		node_ptr->begin  = begin;
 		node_ptr->length = length;
-		if(begin == (last_piece_count-1)*16*1024) 
+		if(begin == (last_piece_count-1)*16*1024)
 		node_ptr->length = last_slice_len;
-		
+
 		ret = read_slice_from_harddisk(node_ptr);
 		if(ret < 0) return -1;
-		
+
 		node_ptr->in_use       = 1;
 		node_ptr->read_write   = 0;
 		node_ptr->is_full      = 1;
 		node_ptr->is_writed    = 0;
 		node_ptr->access_count = 0;
-		
+
 		begin += 16*1024;
 		slice_count--;
 		node_ptr = node_ptr->next;
 	}
-	
+
 	return 0;
 }
 
@@ -1034,11 +1034,11 @@ int read_slice_for_send_last_piece(int index,int begin,int length,Peer *peer)
 {
 	Btcache  *p;
 	int       ret, count = begin / (16*1024);
-	
-	// ¼ì²é²ÎÊıÊÇ·ñÓĞÎó
+
+	// æ£€æŸ¥å‚æ•°æ˜¯å¦æœ‰è¯¯
 	if(index != last_piece_index || begin > (last_piece_count-1)*16*1024)
 		return -1;
-	
+
 	ret = get_bit_value(bitmap,index);
 	if(ret < 0)  {printf("peer requested slice did not download\n"); return -1;}
 
@@ -1051,7 +1051,7 @@ int read_slice_for_send_last_piece(int index,int begin,int length,Peer *peer)
 		ret = read_last_piece_from_harddisk(last_piece,index);
 		if(ret < 0)  return -1;
 	}
-	
+
 	if(p->in_use == 1 && p->is_full == 1) {
 		ret = create_piece_msg(index,begin,p->buff,p->length,peer);
 	}
