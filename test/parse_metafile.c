@@ -5,7 +5,7 @@
 #include <string.h>
 #include <time.h>
 #include "parse_metafile.h"
-//#include "sha1.h"
+#include "sha1.h"
 
 char  *metafile_content = NULL; // 保存种子文件的内容
 long  filesize;                 // 种子文件的长度
@@ -61,13 +61,92 @@ int parse_metafile(char *metafile)
 	if(ret < 0) { printf("%s:%d wrong",__FILE__,__LINE__); return -1; }
 
 	// // 获得info_hash，生成peer_id
-	// ret = get_info_hash();
-	// if(ret < 0) { printf("%s:%d wrong",__FILE__,__LINE__); return -1; }
-	// ret = get_peer_id();
-	// if(ret < 0) { printf("%s:%d wrong",__FILE__,__LINE__); return -1; }
+	ret = get_info_hash();
+	if(ret < 0) { printf("%s:%d wrong",__FILE__,__LINE__); return -1; }
+	ret = get_peer_id();
+	if(ret < 0) { printf("%s:%d wrong",__FILE__,__LINE__); return -1; }
 
 	return 0;
 }
+
+int get_peer_id()
+{
+	// 设置产生随机数的种子
+	srand(time(NULL));
+	// 生成随机数,并把其中12位赋给peer_id,peer_id前8位固定为-TT1000-
+	sprintf(peer_id,"-TT1000-%12d",rand());
+
+#ifdef DEBUG
+	int i;
+	printf("peer_id:");
+	for(i = 0; i < 20; i++)  printf("%c",peer_id[i]);
+	printf("\n");
+#endif
+
+	return 0;
+}
+
+int get_info_hash()
+{
+	int   push_pop = 0;
+	long  i, begin, end;
+
+	if(metafile_content == NULL)  return -1;
+
+	if( find_keyword("4:info",&i) == 1 ) {
+		begin = i+6;  // begin是关键字"4:info"对应值的起始下标
+	} else {
+		return -1;
+	}
+
+	i = i + 6;        // skip "4:info"
+	for(; i < filesize; )
+		if(metafile_content[i] == 'd') {
+			push_pop++;
+			i++;
+		} else if(metafile_content[i] == 'l') {
+			push_pop++;
+			i++;
+		} else if(metafile_content[i] == 'i') {
+			i++;  // skip i
+			if(i == filesize)  return -1;
+			while(metafile_content[i] != 'e') {
+				if((i+1) == filesize)  return -1;
+				else i++;
+			}
+			i++;  // skip e
+		} else if((metafile_content[i] >= '0') && (metafile_content[i] <= '9')) {
+			int number = 0;
+			while((metafile_content[i] >= '0') && (metafile_content[i] <= '9')) {
+				number = number * 10 + metafile_content[i] - '0';
+				i++;
+			}
+			i++;  // skip :
+			i = i + number;
+		} else if(metafile_content[i] == 'e') {
+			push_pop--;
+			if(push_pop == 0) { end = i; break; }
+			else  i++;
+		} else {
+			return -1;
+		}
+	if(i == filesize)  return -1;
+
+	SHA1_CTX context;
+	SHA1Init(&context);
+	SHA1Update(&context, &metafile_content[begin], end-begin+1);
+	SHA1Final(info_hash, &context);
+
+#ifdef DEBUG
+	printf("info_hash:");
+	for(i = 0; i < 20; i++)
+		printf("%.2x ",info_hash[i]);
+	printf("\n");
+#endif
+
+	return 0;
+}
+
 int get_file_length()
 {
 	long i;

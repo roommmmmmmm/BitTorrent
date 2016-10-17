@@ -1,13 +1,13 @@
 #ifndef SIGNAL_HANDER_H
 #define SIGNAL_HANDER_H
 
-// ×öÒ»Ğ©ÇåÀí¹¤×÷,ÈçÊÍ·Å¶¯Ì¬·ÖÅäµÄÄÚ´æ
+// åšä¸€äº›æ¸…ç†å·¥ä½œ,å¦‚é‡Šæ”¾åŠ¨æ€åˆ†é…çš„å†…å­˜
 void do_clear_work();
 
-// ´¦ÀíÒ»Ğ©ĞÅºÅ
+// å¤„ç†ä¸€äº›ä¿¡å·
 void process_signal(int signo);
 
-// ÉèÖÃĞÅºÅ´¦Àíº¯Êı
+// è®¾ç½®ä¿¡å·å¤„ç†å‡½æ•°
 int set_signal_hander();
 
 #endif

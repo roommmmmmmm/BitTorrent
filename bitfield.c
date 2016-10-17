@@ -11,11 +11,11 @@
 extern int  pieces_length;
 extern char *file_name;
 
-Bitmap      *bitmap = NULL;         // ָ��λͼ
-int         download_piece_num = 0; // ��ǰ�����ص�piece��
+Bitmap      *bitmap = NULL;         // 指向位图
+int         download_piece_num = 0; // 当前已下载的piece数
 
-// ��������һ��λͼ�ļ�,����λͼ�ļ����ѻ�ȡ�����ݱ��浽bitmap
-// ����һ��,�Ϳ���ʵ�ֶϵ�����,���ϴ����ص����ݲ����ڶ�ʧ
+// 如果存在一个位图文件,则读位图文件并把获取的内容保存到bitmap
+// 如此一来,就可以实现断点续传,即上次下载的内容不至于丢失
 int create_bitfield()
 {
 	bitmap = (Bitmap *)malloc(sizeof(Bitmap));
@@ -24,7 +24,7 @@ int create_bitfield()
 		return -1;
 	}
 
-	// pieces_length����20��Ϊ�ܵ�piece��
+	// pieces_length除以20即为总的piece数 因为每个piece的hash值为固定的20字节
 	bitmap->valid_length = pieces_length / 20;
 	bitmap->bitfield_length = pieces_length / 20 / 8;
 	if( (pieces_length/20) % 8 != 0 )  bitmap->bitfield_length++;
@@ -41,14 +41,14 @@ int create_bitfield()
 
 	int  i;
 	FILE *fp = fopen(bitmapfile,"rb");
-	if(fp == NULL) {  // �������ļ�ʧ��,˵����ʼ����һ��ȫ�µ�����
+	if(fp == NULL) {  // 若打开文件失败,说明开始的是一个全新的下载
 		memset(bitmap->bitfield, 0, bitmap->bitfield_length);
 	} else {
 		fseek(fp,0,SEEK_SET);
 		for(i = 0; i < bitmap->bitfield_length; i++)
 			(bitmap->bitfield)[i] = fgetc(fp);
 		fclose(fp);
-		// ��download_piece_num���µĳ�ֵ
+		// 给download_piece_num赋新的初值
 		download_piece_num = get_download_piece_num();
 	}
 
@@ -173,8 +173,8 @@ int is_interested(Bitmap *dst,Bitmap *src)
 	return 0;
 }
 /*
-    ���Ϻ����Ĺ��ܲ��Դ������£�
-	����ʱ���Խ���map1.bitfield��map2.bitfield��ֵ��������ֵ
+    以上函数的功能测试代码如下：
+	测试时可以交换map1.bitfield和map2.bitfield的值或赋其他值
 
 	Bitmap map1, map2;
 	unsigned char bf1[2] = { 0xa0, 0xa0 };
@@ -191,7 +191,7 @@ int is_interested(Bitmap *dst,Bitmap *src)
 	printf("%d\n",ret);
  */
 
-// ��ȡ��ǰ�����ص����ܵ�piece��
+// 获取当前已下载到的总的piece数
 int get_download_piece_num()
 {
 	unsigned char const_char[8] = { 0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01};
@@ -208,8 +208,8 @@ int get_download_piece_num()
 		}
 	}
 
-	unsigned char c = (bitmap->bitfield)[i]; // c����λͼ����һ���ֽ�
-	j = bitmap->valid_length % 8;            // j��λͼ����һ���ֽڵ���Чλ��
+	unsigned char c = (bitmap->bitfield)[i]; // c存放位图最后一个字节
+	j = bitmap->valid_length % 8;            // j是位图最后一个字节的有效位数
 	for(i = 0; i < j; i++) {
 		if( (c & const_char[i]) !=0 ) download_piece_num++;
 	}

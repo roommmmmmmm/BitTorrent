@@ -17,25 +17,25 @@ extern Peer *peer_head;
 
 void do_clear_work()
 {
-	// ¹Ø±ÕËùÓĞpeerµÄsocket
+	// å…³é—­æ‰€æœ‰peerçš„socket
 	Peer *p = peer_head;
 	while(p != NULL) {
 		if(p->state != CLOSING)  close(p->socket);
 		p = p->next;
 	}
 
-	// ±£´æÎ»Í¼
+	// ä¿å­˜ä½å›¾
 	if(download_piece_num > 0) {
 		restore_bitmap();
 	}
 
-	// ¹Ø±ÕÎÄ¼şÃèÊö·û
+	// å…³é—­æ–‡ä»¶æè¿°ç¬¦
 	int i;
 	for(i = 0; i < fds_len; i++) {
 		close(fds[i]);
 	}
-	
-	// ÊÍ·Å¶¯Ì¬·ÖÅäµÄÄÚ´æ
+
+	// é‡Šæ”¾åŠ¨æ€åˆ†é…çš„å†…å­˜
 	release_memory_in_parse_metafile();
 	release_memory_in_bitfield();
 	release_memory_in_btcache();
@@ -50,7 +50,7 @@ void process_signal(int signo)
 	printf("Please wait for clear operations\n");
 	do_clear_work();
 }
-	
+
 
 int set_signal_hander()
 {
@@ -58,16 +58,16 @@ int set_signal_hander()
 		perror("can not catch signal:sigpipe\n");
 		return -1;
 	}
-	
+
 	if(signal(SIGINT,process_signal)  == SIG_ERR) {
 		perror("can not catch signal:sigint\n");
 		return -1;
 	}
-	
+
 	if(signal(SIGTERM,process_signal) == SIG_ERR) {
 		perror("can not catch signal:sigterm\n");
 		return -1;
 	}
-	
+
 	return 0;
 }

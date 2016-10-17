@@ -23,33 +23,33 @@ int main(int argc, char *argv[])
 		exit(-1);
 	}
 
-	// ÉèÖÃĞÅºÅ´¦Àíº¯Êı
+	// è®¾ç½®ä¿¡å·å¤„ç†å‡½æ•°
 	ret = set_signal_hander();
 	if(ret != 0)  { printf("%s:%d error\n",__FILE__,__LINE__); return -1; }
 
-	// ½âÎöÖÖ×ÓÎÄ¼ş
+	// è§£æç§å­æ–‡ä»¶
 	ret = parse_metafile(argv[1]);
 	if(ret != 0)  { printf("%s:%d error\n",__FILE__,__LINE__); return -1; }
 
-	// ³õÊ¼»¯·Ç×èÈûpeer
+	// åˆå§‹åŒ–éé˜»å¡peer
 	init_unchoke_peers();
 
-	// ´´½¨ÓÃÓÚ±£´æÏÂÔØÊı¾İµÄÎÄ¼ş
+	// åˆ›å»ºç”¨äºä¿å­˜ä¸‹è½½æ•°æ®çš„æ–‡ä»¶
 	ret = create_files();
 	if(ret != 0)  { printf("%s:%d error\n",__FILE__,__LINE__); return -1; }
 
-	// ´´½¨Î»Í¼
+	// åˆ›å»ºä½å›¾
 	ret = create_bitfield();
 	if(ret != 0)  { printf("%s:%d error\n",__FILE__,__LINE__); return -1; }
 
-	// ´´½¨»º³åÇø
+	// åˆ›å»ºç¼“å†²åŒº
 	ret = create_btcache();
 	if(ret != 0)  { printf("%s:%d error\n",__FILE__,__LINE__); return -1; }
 
-	// ¸ºÔğÓëËùÓĞPeerÊÕ·¢Êı¾İ¡¢½»»»ÏûÏ¢
+	// è´Ÿè´£ä¸æ‰€æœ‰Peeræ”¶å‘æ•°æ®ã€äº¤æ¢æ¶ˆæ¯
 	download_upload_with_peers();
 
-	// ×öÒ»Ğ©ÇåÀí¹¤×÷,Ö÷ÒªÊÇÊÍ·Å¶¯Ì¬·ÖÅäµÄÄÚ´æ
+	// åšä¸€äº›æ¸…ç†å·¥ä½œ,ä¸»è¦æ˜¯é‡Šæ”¾åŠ¨æ€åˆ†é…çš„å†…å­˜
 	do_clear_work();
 
 	return 0;

@@ -2,24 +2,24 @@
 #define BITFIELD_H
 
 typedef struct _Bitmap {
-	unsigned char *bitfield;       // ±£´æÎ»Í¼
-	int           bitfield_length; // Î»Í¼ËùÕ¼µÄ×Ü×Ö½ÚÊı
-	int           valid_length;    // Î»Í¼ÓĞĞ§µÄ×ÜÎ»Êı,Ã¿Ò»Î»´ú±íÒ»¸öpiece
+	unsigned char *bitfield;       // ä¿å­˜ä½å›¾
+	int           bitfield_length; // ä½å›¾æ‰€å çš„æ€»å­—èŠ‚æ•°
+	int           valid_length;    // ä½å›¾æœ‰æ•ˆçš„æ€»ä½æ•°,æ¯ä¸€ä½ä»£è¡¨ä¸€ä¸ªpiece
 } Bitmap;
 
-int  create_bitfield();                       // ´´½¨Î»Í¼,·ÖÅäÄÚ´æ²¢½øĞĞ³õÊ¼»¯
-int  get_bit_value(Bitmap *bitmap,int index); // »ñÈ¡Ä³Ò»Î»µÄÖµ
+int  create_bitfield();                       // åˆ›å»ºä½å›¾,åˆ†é…å†…å­˜å¹¶è¿›è¡Œåˆå§‹åŒ–
+int  get_bit_value(Bitmap *bitmap,int index); // è·å–æŸä¸€ä½çš„å€¼
 int  set_bit_value(Bitmap *bitmap,int index,
-				   unsigned char value);      // ÉèÖÃÄ³Ò»Î»µÄÖµ
-int  all_zero(Bitmap *bitmap);                // È«²¿ÇåÁã
-int  all_set(Bitmap *bitmap);                 // È«²¿ÉèÖÃÎª1
-void release_memory_in_bitfield();            // ÊÍ·Åbitfield.cÖĞ¶¯Ì¬·ÖÅäµÄÄÚ´æ
-int  print_bitfield(Bitmap *bitmap);          // ´òÓ¡Î»Í¼Öµ,ÓÃÓÚµ÷ÊÔ
+				   unsigned char value);      // è®¾ç½®æŸä¸€ä½çš„å€¼
+int  all_zero(Bitmap *bitmap);                // å…¨éƒ¨æ¸…é›¶
+int  all_set(Bitmap *bitmap);                 // å…¨éƒ¨è®¾ç½®ä¸º1
+void release_memory_in_bitfield();            // é‡Šæ”¾bitfield.cä¸­åŠ¨æ€åˆ†é…çš„å†…å­˜
+int  print_bitfield(Bitmap *bitmap);          // æ‰“å°ä½å›¾å€¼,ç”¨äºè°ƒè¯•
 
-int  restore_bitmap(); // ½«Î»Í¼´æ´¢µ½ÎÄ¼şÖĞ 
-                       // ÔÚÏÂ´ÎÏÂÔØÊ±,ÏÈ¶ÁÈ¡¸ÃÎÄ¼ş»ñÈ¡ÒÑ¾­ÏÂÔØµÄ½ø¶È
-int  is_interested(Bitmap *dst,Bitmap *src);  // ÓµÓĞÎ»Í¼srcµÄpeerÊÇ·ñ¶ÔÓµÓĞ
-                                              // dstÎ»Í¼µÄpeer¸ĞĞËÈ¤
-int  get_download_piece_num(); // »ñÈ¡µ±Ç°ÒÑÏÂÔØµ½µÄ×ÜpieceÊı
+int  restore_bitmap(); // å°†ä½å›¾å­˜å‚¨åˆ°æ–‡ä»¶ä¸­
+                       // åœ¨ä¸‹æ¬¡ä¸‹è½½æ—¶,å…ˆè¯»å–è¯¥æ–‡ä»¶è·å–å·²ç»ä¸‹è½½çš„è¿›åº¦
+int  is_interested(Bitmap *dst,Bitmap *src);  // æ‹¥æœ‰ä½å›¾srcçš„peeræ˜¯å¦å¯¹æ‹¥æœ‰
+                                              // dstä½å›¾çš„peeræ„Ÿå…´è¶£
+int  get_download_piece_num(); // è·å–å½“å‰å·²ä¸‹è½½åˆ°çš„æ€»pieceæ•°
 
 #endif
